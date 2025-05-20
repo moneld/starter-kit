@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Énumération des rôles utilisateur
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  EDITOR
+  USER
+}
+
+// Modèle principal Utilisateur
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
+  role      UserRole @default(USER)
+
+  // Statut du compte
+  isActive        Boolean  @default(false) @map("is_active")
+  isEmailVerified Boolean  @default(false) @map("is_email_verified")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Sécurité de connexion
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastLoginAt         DateTime? @map("last_login_at")
+
+  // Authentification à deux facteurs
+  isTwoFactorEnabled     Boolean @default(false) @map("is_two_factor_enabled")
+  twoFactorSecret        String? @map("two_factor_secret")
+  twoFactorRecoveryCodes String? @map("two_factor_recovery_codes")
+
+  // Tokens pour la vérification et la réinitialisation
+  verificationToken  VerificationToken?
+  passwordResetToken PasswordResetToken?
+  refreshToken       RefreshToken?
+
+  @@index([email])
+  @@map("users")
+}
+
+// Token de vérification d'email
+model VerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique // Valeur du token
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relation avec User
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique @map("user_id")
+
+  @@index([token])
+  @@map("verification_tokens")
+}
+
+// Token de réinitialisation de mot de passe
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relation avec User
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique @map("user_id")
+
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+// Token de rafraîchissement
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+
+  // Relation avec User
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique @map("user_id")
+
+  @@index([token])
+  @@map("refresh_tokens")
+}
