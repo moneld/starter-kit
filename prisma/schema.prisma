@@ -104,3 +104,14 @@ model RefreshToken {
   @@index([token])
   @@map("refresh_tokens")
 }
+
+model EncryptionKey {
+  id        String    @id @default(uuid())
+  version   Int       @unique // Pour identifier facilement la version de clé
+  key       String // La clé chiffrée (elle-même chiffrée avec une clé maître)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime? @map("expires_at") // Date d'expiration planifiée
+
+  @@map("encryption_keys")
+}

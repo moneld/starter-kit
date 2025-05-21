@@ -46,6 +46,7 @@ import {
     TwoFactorSecretResponse,
 } from './interfaces/auth-responses.interface';
 import { AuthEventsService } from './services/auth-events.service';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 
 @ApiTags('Authentification')
 @Controller('auth')
@@ -92,6 +93,7 @@ export class AuthController {
 
     @Public()
     @UseGuards(LocalAuthGuard)
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @Post('login')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Connexion utilisateur' })
@@ -121,6 +123,7 @@ export class AuthController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @SkipThrottle()
     @Post('logout')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Déconnexion' })
@@ -139,6 +142,7 @@ export class AuthController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @SkipThrottle()
     @Post('logout-all')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Déconnexion de toutes les sessions' })

@@ -11,7 +11,8 @@ export const securityConfig = registerAs('security', () => ({
 
     // Encryption
     encryption: {
-        secretKey: process.env.ENCRYPTION_KEY,
+        masterKey: process.env.MASTER_ENCRYPTION_KEY,
+        keyRotationInterval: process.env.ENCRYPTION_KEY_ROTATION_INTERVAL,
     },
 
     // CSRF

@@ -56,9 +56,9 @@ update_env_var "JWT_ACCESS_SECRET" "${JWT_ACCESS_SECRET}"
 JWT_REFRESH_SECRET=$(generate_secure_key)
 update_env_var "JWT_REFRESH_SECRET" "${JWT_REFRESH_SECRET}"
 
-# Générer et configurer ENCRYPTION_KEY
-ENCRYPTION_KEY=$(generate_secure_key)
-update_env_var "ENCRYPTION_KEY" "${ENCRYPTION_KEY}"
+# Générer et configurer MASTER_ENCRYPTION_KEY
+MASTER_ENCRYPTION_KEY=$(generate_secure_key)
+update_env_var "MASTER_ENCRYPTION_KEY" "${MASTER_ENCRYPTION_KEY}"
 
 # Générer et configurer CSRF_SECRET_KEY
 CSRF_SECRET_KEY=$(generate_secure_key)
@@ -68,7 +68,7 @@ echo -e "${GREEN}Configuration terminée avec succès !${NC}"
 echo -e "${BLUE}Les variables suivantes ont été configurées:${NC}"
 echo -e "  - JWT_ACCESS_SECRET"
 echo -e "  - JWT_REFRESH_SECRET"
-echo -e "  - ENCRYPTION_KEY"
+echo -e "  - MASTER_ENCRYPTION_KEY"
 echo -e "  - CSRF_SECRET_KEY"
 
 echo -e "${YELLOW}Note: Assurez-vous que le fichier .env contient toutes les autres variables nécessaires à votre application.${NC}"
