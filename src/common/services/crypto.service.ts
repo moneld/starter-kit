@@ -19,7 +19,6 @@ export class CryptoService implements OnModuleInit {
         private readonly configService: ConfigService,
         private readonly prisma: PrismaService,
     ) {
-
         // La clé maître (racine) qui sera utilisée pour chiffrer/déchiffrer les clés de données
         const masterKeyString = this.configService.get<string>(
             'security.encryption.masterKey',
@@ -205,7 +204,9 @@ export class CryptoService implements OnModuleInit {
                 },
             });
 
-            this.logger.log(`Re-chiffrement des données pour ${users.length} utilisateurs...`);
+            this.logger.log(
+                `Re-chiffrement des données pour ${users.length} utilisateurs...`,
+            );
 
             // Traiter par lots pour éviter de surcharger la base de données
             const batchSize = 100;
@@ -218,22 +219,28 @@ export class CryptoService implements OnModuleInit {
                             // Vérifier si les données existent avant de les déchiffrer
                             if (user.twoFactorSecret) {
                                 // Déchiffrer avec l'ancienne clé
-                                const decryptedSecret = this.decrypt(user.twoFactorSecret);
+                                const decryptedSecret = this.decrypt(
+                                    user.twoFactorSecret,
+                                );
                                 // Re-chiffrer avec la nouvelle clé
-                                const newEncryptedSecret = this.encrypt(decryptedSecret);
+                                const newEncryptedSecret =
+                                    this.encrypt(decryptedSecret);
 
                                 // Préparer les données à mettre à jour
                                 const updateData: {
                                     twoFactorSecret: string;
                                     twoFactorRecoveryCodes?: string | null;
                                 } = {
-                                    twoFactorSecret: newEncryptedSecret
+                                    twoFactorSecret: newEncryptedSecret,
                                 };
 
                                 // Faire de même pour les codes de récupération s'ils existent
                                 if (user.twoFactorRecoveryCodes) {
-                                    const decryptedCodes = this.decrypt(user.twoFactorRecoveryCodes);
-                                    updateData.twoFactorRecoveryCodes = this.encrypt(decryptedCodes);
+                                    const decryptedCodes = this.decrypt(
+                                        user.twoFactorRecoveryCodes,
+                                    );
+                                    updateData.twoFactorRecoveryCodes =
+                                        this.encrypt(decryptedCodes);
                                 }
 
                                 // Mettre à jour en base de données
@@ -243,18 +250,23 @@ export class CryptoService implements OnModuleInit {
                                 });
                             }
                         } catch (error) {
-                            this.logger.error(`Erreur lors du re-chiffrement pour l'utilisateur ${user.id}: ${error.message}`);
+                            this.logger.error(
+                                `Erreur lors du re-chiffrement pour l'utilisateur ${user.id}: ${error.message}`,
+                            );
                         }
-                    })
+                    }),
                 );
 
-                this.logger.log(`Traité ${Math.min(i + batchSize, users.length)}/${users.length} utilisateurs`);
+                this.logger.log(
+                    `Traité ${Math.min(i + batchSize, users.length)}/${users.length} utilisateurs`,
+                );
             }
 
             // Répéter pour d'autres données sensibles...
-
         } catch (error) {
-            this.logger.error(`Erreur lors du re-chiffrement des données: ${error.message}`);
+            this.logger.error(
+                `Erreur lors du re-chiffrement des données: ${error.message}`,
+            );
             throw error;
         }
     }

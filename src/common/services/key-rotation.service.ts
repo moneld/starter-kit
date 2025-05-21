@@ -31,13 +31,19 @@ export class KeyRotationService {
             });
 
             if (expiredKey) {
-                this.logger.log(`La clé active (version ${expiredKey.version}) a expiré, rotation en cours...`);
+                this.logger.log(
+                    `La clé active (version ${expiredKey.version}) a expiré, rotation en cours...`,
+                );
                 await this.cryptoService.rotateEncryptionKey();
             } else {
-                this.logger.log('Aucune rotation de clé nécessaire pour le moment');
+                this.logger.log(
+                    'Aucune rotation de clé nécessaire pour le moment',
+                );
             }
         } catch (error) {
-            this.logger.error(`Erreur lors de la vérification de rotation des clés: ${error.message}`);
+            this.logger.error(
+                `Erreur lors de la vérification de rotation des clés: ${error.message}`,
+            );
         }
     }
 

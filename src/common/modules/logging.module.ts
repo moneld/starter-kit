@@ -17,8 +17,14 @@ import * as rfs from 'rotating-file-stream';
                     'info',
                 );
                 const logDir = configService.get<string>('app.log.dir', 'logs');
-                const maxSize = configService.get<string>('app.log.maxSize', '20m');
-                const maxFiles = configService.get<string>('app.log.maxFiles', '14d');
+                const maxSize = configService.get<string>(
+                    'app.log.maxSize',
+                    '20m',
+                );
+                const maxFiles = configService.get<string>(
+                    'app.log.maxFiles',
+                    '14d',
+                );
 
                 // S'assurer que le répertoire de logs existe
                 const logDirPath = path.isAbsolute(logDir)
@@ -66,9 +72,13 @@ import * as rfs from 'rotating-file-stream';
                     const filenameGenerator = (time, index) => {
                         if (!time) return 'app.log';
 
-                        const date = time instanceof Date ? time : new Date(time);
+                        const date =
+                            time instanceof Date ? time : new Date(time);
                         const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(
+                            2,
+                            '0',
+                        );
                         const day = String(date.getDate()).padStart(2, '0');
 
                         if (index) {
@@ -79,21 +89,25 @@ import * as rfs from 'rotating-file-stream';
 
                     // Configurer le stream pour les logs généraux
                     const appLogStream = rfs.createStream(filenameGenerator, {
-                        size: sizeLimit,         // Taille maximale
-                        interval: interval,      // Intervalle de rotation
-                        path: logDirPath,        // Chemin du répertoire
-                        compress: 'gzip',        // Compression des anciens logs
+                        size: sizeLimit, // Taille maximale
+                        interval: interval, // Intervalle de rotation
+                        path: logDirPath, // Chemin du répertoire
+                        compress: 'gzip', // Compression des anciens logs
                         maxFiles: maxRotationFiles, // Nombre maximum de fichiers à conserver
-                        teeToStdout: false       // Ne pas dupliquer vers stdout
+                        teeToStdout: false, // Ne pas dupliquer vers stdout
                     });
 
                     // Fonction de nommage pour les fichiers d'erreurs
                     const errorFilenameGenerator = (time, index) => {
                         if (!time) return 'error.log';
 
-                        const date = time instanceof Date ? time : new Date(time);
+                        const date =
+                            time instanceof Date ? time : new Date(time);
                         const year = date.getFullYear();
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(
+                            2,
+                            '0',
+                        );
                         const day = String(date.getDate()).padStart(2, '0');
 
                         if (index) {
@@ -103,14 +117,17 @@ import * as rfs from 'rotating-file-stream';
                     };
 
                     // Configurer le stream pour les logs d'erreurs
-                    const errorLogStream = rfs.createStream(errorFilenameGenerator, {
-                        size: sizeLimit,         // Taille maximale
-                        interval: interval,      // Intervalle de rotation
-                        path: logDirPath,        // Chemin du répertoire
-                        compress: 'gzip',        // Compression des anciens logs
-                        maxFiles: maxRotationFiles, // Nombre maximum de fichiers à conserver
-                        teeToStdout: false       // Ne pas dupliquer vers stdout
-                    });
+                    const errorLogStream = rfs.createStream(
+                        errorFilenameGenerator,
+                        {
+                            size: sizeLimit, // Taille maximale
+                            interval: interval, // Intervalle de rotation
+                            path: logDirPath, // Chemin du répertoire
+                            compress: 'gzip', // Compression des anciens logs
+                            maxFiles: maxRotationFiles, // Nombre maximum de fichiers à conserver
+                            teeToStdout: false, // Ne pas dupliquer vers stdout
+                        },
+                    );
 
                     // Créer un filtre pour les logs d'erreurs
                     const errorFilter = (info) => {
@@ -130,16 +147,22 @@ import * as rfs from 'rotating-file-stream';
                                     // Analyse JSON pour vérifier si c'est une erreur
                                     try {
                                         const info = JSON.parse(data);
-                                        if (info.level === 50 || info.level === 'error') {
+                                        if (
+                                            info.level === 50 ||
+                                            info.level === 'error'
+                                        ) {
                                             errorLogStream.write(data);
                                         }
                                     } catch (e) {
                                         // Fallback en cas d'erreur de parsing JSON
-                                        if (data.includes('"level":50') || data.includes('"level":"error"')) {
+                                        if (
+                                            data.includes('"level":50') ||
+                                            data.includes('"level":"error"')
+                                        ) {
                                             errorLogStream.write(data);
                                         }
                                     }
-                                }
+                                },
                             },
                             formatters: {
                                 level: (label) => ({ level: label }),
