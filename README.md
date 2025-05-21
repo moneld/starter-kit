@@ -1,1 +1,0 @@
-Installer logrotate sur le système
