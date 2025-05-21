@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { MailModule } from './modules/mail/mail.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { KeyRotationService } from './common/services/key-rotation.service';
+import { LoggingModule } from './common/modules/logging.module';
 
 @Module({
     imports: [
@@ -36,6 +37,7 @@ import { KeyRotationService } from './common/services/key-rotation.service';
             }),
         }),
         ScheduleModule.forRoot(),
+        LoggingModule,
         PrismaModule,
         UsersModule,
         AuthModule,

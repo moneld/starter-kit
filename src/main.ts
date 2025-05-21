@@ -10,13 +10,20 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { AuthExceptionsFilter } from './modules/auth/filters/auth-exceptions.filter';
 import { SecurityHeadersInterceptor } from './modules/auth/interceptors/security-headers.interceptor';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
     // Créer l'application avec Fastify
     const app = await NestFactory.create<NestFastifyApplication>(
         AppModule,
-        new FastifyAdapter({ logger: true }),
+        new FastifyAdapter(),
+        {
+            bufferLogs: true,
+        },
     );
+
+    // Utiliser le logger Pino comme logger de l'application
+    app.useLogger(app.get(Logger));
 
     // Récupérer la configuration
     const configService = app.get(ConfigService);
@@ -25,10 +32,7 @@ async function bootstrap() {
         'app.general.nodeEnv',
         'development',
     );
-    const frontendUrl = configService.get<string>(
-        'app.general.frontendUrl',
-        '*',
-    );
+
     const appName = configService.get<string>('app.general.name', 'API');
 
     // Configurer Helmet pour les headers de sécurité
@@ -83,7 +87,7 @@ async function bootstrap() {
     }
 
     // Démarrer le serveur
-    await app.listen(port, '0.0.0.0');
+    await app.listen(port);
     console.log(`Application démarrée sur le port ${port} en mode ${nodeEnv}`);
 }
 

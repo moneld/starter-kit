@@ -15,11 +15,6 @@ export const securityConfig = registerAs('security', () => ({
         keyRotationInterval: process.env.ENCRYPTION_KEY_ROTATION_INTERVAL,
     },
 
-    // CSRF
-    csrf: {
-        secretKey: process.env.CSRF_SECRET_KEY,
-    },
-
     argon2: {
         memoryCost: process.env.ARGON2_MEMORY_COST,
         timeCost: process.env.ARGON2_TIME_COST,
