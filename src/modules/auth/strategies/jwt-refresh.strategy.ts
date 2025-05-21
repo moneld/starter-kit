@@ -10,14 +10,19 @@ import { FastifyRequest } from 'fastify';
  * Stratégie pour valider les tokens de rafraîchissement JWT
  */
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+    Strategy,
+    'jwt-refresh',
+) {
     constructor(
         private readonly configService: ConfigService,
         private readonly usersService: UsersService,
     ) {
         const secret = configService.get<string>('security.jwt.refreshSecret');
         if (!secret) {
-            throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+            throw new Error(
+                'JWT_REFRESH_SECRET is not defined in environment variables',
+            );
         }
 
         // Utilisez un seul objet de configuration sans StrategyOptions
@@ -38,7 +43,9 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
         const refreshToken = authHeader?.split(' ')[1]; // Extrait le token après "Bearer "
 
         if (!refreshToken) {
-            throw new UnauthorizedException('Token de rafraîchissement manquant');
+            throw new UnauthorizedException(
+                'Token de rafraîchissement manquant',
+            );
         }
 
         try {
@@ -59,7 +66,9 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
                 refreshToken,
             };
         } catch (error) {
-            throw new UnauthorizedException('Token de rafraîchissement invalide');
+            throw new UnauthorizedException(
+                'Token de rafraîchissement invalide',
+            );
         }
     }
 }

@@ -165,7 +165,7 @@ export class AuthService {
                     firstName: user.firstName || '', // Assurez-vous que ce n'est jamais null
                     lastName: user.lastName || '', // Assurez-vous que ce n'est jamais null
                     role: user.role,
-                }
+                },
             };
         } catch (error) {
             this.logger.error(`Erreur lors de la connexion: ${error.message}`);
@@ -440,12 +440,12 @@ export class AuthService {
             );
 
             // Révoquer l'ancien token et enregistrer le nouveau
-          //  await this.tokenService.revokeRefreshToken(refreshToken);
+            //  await this.tokenService.revokeRefreshToken(refreshToken);
             await this.tokenService.saveRefreshToken(
                 tokenRecord.user.id,
                 newRefreshToken,
                 tokenRecord.userAgent || undefined, // Conversion en undefined si null
-                tokenRecord.ipAddress || undefined // Conversion en undefined si null
+                tokenRecord.ipAddress || undefined, // Conversion en undefined si null
             );
 
             return {

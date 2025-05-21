@@ -13,7 +13,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     ) {
         const secret = configService.get<string>('security.jwt.accessSecret');
         if (!secret) {
-            throw new Error('JWT_ACCESS_SECRET is not defined in environment variables');
+            throw new Error(
+                'JWT_ACCESS_SECRET is not defined in environment variables',
+            );
         }
 
         super({
@@ -38,7 +40,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
             // Pour les utilisateurs avec 2FA activée, vérifier si 2FA a été complétée
             if (user.isTwoFactorEnabled && !payload.isTwoFactorAuth) {
-                throw new UnauthorizedException('Authentification à deux facteurs requise');
+                throw new UnauthorizedException(
+                    'Authentification à deux facteurs requise',
+                );
             }
 
             // Retourner les informations utilisateur à attacher à la requête
