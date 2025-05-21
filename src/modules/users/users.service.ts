@@ -29,7 +29,9 @@ export class UsersService {
       type: argon2.argon2id,
       memoryCost: this.configService.get('security.argon2.memoryCost'),
       timeCost: this.configService.get('security.argon2.timeCost'),
-      parallelism: this.configService.get('security.argon2.parallelismCost'),
+      parallelism: this.configService.get(
+        'security.argon2.parallelismCost',
+      ),
       salt: this.configService.get('security.argon2.saltLength'),
     };
   }
@@ -53,7 +55,9 @@ export class UsersService {
       this.logger.warn(
         `Tentative de création d'un compte avec un email existant: ${normalizedEmail}`,
       );
-      throw new ConflictException('Un utilisateur avec cet email existe déjà');
+      throw new ConflictException(
+        'Un utilisateur avec cet email existe déjà',
+      );
     }
 
     // Hasher le mot de passe
@@ -87,9 +91,10 @@ export class UsersService {
 
     try {
       // Créer l'utilisateur
-      const { password: _, ...userResult } = await this.prisma.user.create({
-        data: userData,
-      });
+      const { password: _, ...userResult } =
+        await this.prisma.user.create({
+          data: userData,
+        });
 
       this.logger.log(`Utilisateur créé avec succès: ${normalizedEmail}`);
 
@@ -159,7 +164,9 @@ export class UsersService {
     });
 
     if (!user) {
-      throw new NotFoundException(`Utilisateur non trouvé avec l'ID: ${id}`);
+      throw new NotFoundException(
+        `Utilisateur non trouvé avec l'ID: ${id}`,
+      );
     }
 
     return user;
@@ -187,19 +194,57 @@ export class UsersService {
   /**
    * Met à jour un utilisateur
    */
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateData: Partial<any>): Promise<User> {
     // Vérifier si l'utilisateur existe
     await this.findById(id);
 
     // Préparer les données de mise à jour
-    const updateData = await this.buildUpdateData(updateUserDto);
+    const updateObj: Prisma.UserUpdateInput = {};
+
+    // Ajouter les champs définis dans updateData au updateObj
+    if (updateData.firstName !== undefined) {
+      updateObj.firstName = updateData.firstName;
+    }
+
+    if (updateData.lastName !== undefined) {
+      updateObj.lastName = updateData.lastName;
+    }
+
+    if (updateData.email !== undefined) {
+      updateObj.email = updateData.email.toLowerCase();
+    }
+
+    if (updateData.password !== undefined) {
+      updateObj.password = await this.hashPassword(updateData.password);
+    }
+
+    if (updateData.role !== undefined) {
+      updateObj.role = updateData.role;
+    }
+
+    if (updateData.isActive !== undefined) {
+      updateObj.isActive = updateData.isActive;
+    }
+
+    if (updateData.isEmailVerified !== undefined) {
+      updateObj.isEmailVerified = updateData.isEmailVerified;
+    }
+
+    if (updateData.failedLoginAttempts !== undefined) {
+      updateObj.failedLoginAttempts = updateData.failedLoginAttempts;
+    }
+
+    if (updateData.lockedUntil !== undefined) {
+      updateObj.lockedUntil = updateData.lockedUntil;
+    }
 
     try {
       // Mettre à jour l'utilisateur
-      const { password: _, ...userResult } = await this.prisma.user.update({
-        where: { id },
-        data: updateData,
-      });
+      const { password: _, ...userResult } =
+        await this.prisma.user.update({
+          where: { id },
+          data: updateObj,
+        });
 
       this.logger.log(`Utilisateur mis à jour avec succès: ${id}`);
       return userResult as User;
@@ -211,38 +256,7 @@ export class UsersService {
     }
   }
 
-  /**
-   * Construit l'objet de mise à jour à partir du DTO
-   */
-  private async buildUpdateData(
-    updateUserDto: UpdateUserDto,
-  ): Promise<Prisma.UserUpdateInput> {
-    const updateData: Prisma.UserUpdateInput = {};
 
-    // Ajouter les champs non-null au updateData
-    if (updateUserDto.firstName !== undefined) {
-      updateData.firstName = updateUserDto.firstName;
-    }
-
-    if (updateUserDto.lastName !== undefined) {
-      updateData.lastName = updateUserDto.lastName;
-    }
-
-    if (updateUserDto.isActive !== undefined) {
-      updateData.isActive = updateUserDto.isActive;
-    }
-
-    if (updateUserDto.role !== undefined) {
-      updateData.role = updateUserDto.role;
-    }
-
-    // Traitement spécial pour le mot de passe
-    if (updateUserDto.password) {
-      updateData.password = await this.hashPassword(updateUserDto.password);
-    }
-
-    return updateData;
-  }
 
   /**
    * Supprime un utilisateur
@@ -253,9 +267,10 @@ export class UsersService {
 
     try {
       // Supprimer l'utilisateur
-      const { password: _, ...userResult } = await this.prisma.user.delete({
-        where: { id },
-      });
+      const { password: _, ...userResult } =
+        await this.prisma.user.delete({
+          where: { id },
+        });
 
       this.logger.log(`Utilisateur supprimé avec succès: ${id}`);
       return userResult as User;
@@ -272,10 +287,11 @@ export class UsersService {
    */
   async verifyEmail(token: string): Promise<User> {
     // Rechercher le token de vérification avec l'utilisateur associé
-    const verificationToken = await this.prisma.verificationToken.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+    const verificationToken =
+      await this.prisma.verificationToken.findUnique({
+        where: { token },
+        include: { user: true },
+      });
 
     if (!verificationToken) {
       throw new NotFoundException('Token de vérification invalide');
@@ -293,8 +309,8 @@ export class UsersService {
 
     try {
       // Transaction pour garantir l'atomicité des opérations
-      const { password: _, ...userResult } = await this.prisma.$transaction(
-        async (prisma) => {
+      const { password: _, ...userResult } =
+        await this.prisma.$transaction(async (prisma) => {
           // Supprimer le token de vérification
           await prisma.verificationToken.delete({
             where: { id: verificationToken.id },
@@ -308,8 +324,7 @@ export class UsersService {
               isActive: true,
             },
           });
-        },
-      );
+        });
 
       this.logger.log(
         `Email vérifié avec succès pour l'utilisateur: ${verificationToken.userId}`,
@@ -337,9 +352,13 @@ export class UsersService {
         },
       });
 
-      this.logger.debug(`Tentatives de connexion réinitialisées: ${userId}`);
+      this.logger.debug(
+        `Tentatives de connexion réinitialisées: ${userId}`,
+      );
     } catch (error) {
-      this.logger.error(`Erreur réinitialisation tentatives: ${error.message}`);
+      this.logger.error(
+        `Erreur réinitialisation tentatives: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -385,7 +404,9 @@ export class UsersService {
         data: updateData,
       });
     } catch (error) {
-      this.logger.error(`Erreur incrémentation tentatives: ${error.message}`);
+      this.logger.error(
+        `Erreur incrémentation tentatives: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -442,7 +463,9 @@ export class UsersService {
 
       this.logger.log(`Mot de passe changé avec succès: ${userId}`);
     } catch (error) {
-      this.logger.error(`Erreur changement mot de passe: ${error.message}`);
+      this.logger.error(
+        `Erreur changement mot de passe: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -486,10 +509,11 @@ export class UsersService {
    */
   async resetPassword(token: string, newPassword: string): Promise<void> {
     // Rechercher le token avec l'utilisateur associé
-    const passwordResetToken = await this.prisma.passwordResetToken.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+    const passwordResetToken =
+      await this.prisma.passwordResetToken.findUnique({
+        where: { token },
+        include: { user: true },
+      });
 
     if (!passwordResetToken) {
       throw new NotFoundException('Token de réinitialisation invalide');
@@ -500,7 +524,9 @@ export class UsersService {
       await this.prisma.passwordResetToken.delete({
         where: { id: passwordResetToken.id },
       });
-      throw new BadRequestException('Le token de réinitialisation a expiré');
+      throw new BadRequestException(
+        'Le token de réinitialisation a expiré',
+      );
     }
 
     try {
