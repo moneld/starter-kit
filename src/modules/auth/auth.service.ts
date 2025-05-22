@@ -87,34 +87,69 @@ export class AuthService {
         };
     }> {
         try {
-            // Trouver l'utilisateur par email
-            const user = await this.usersService.findByEmail(loginDto.email);
+            // 1. Trouver l'utilisateur par email
+            let user;
+            try {
+                user = await this.usersService.findByEmail(loginDto.email);
+            } catch (error) {
+                // Ne pas divulguer si l'email existe ou non
+                throw new UnauthorizedException('Identifiants invalides');
+            }
 
-            // Vérifier si le compte est verrouillé
+            // 2. Vérifier si le compte est verrouillé
             const { locked, unlockTime } =
                 await this.usersService.isAccountLocked(user.id);
+
+            this.logger.debug(
+                `Vérification verrouillage pour ${user.email}: locked=${locked}, unlockTime=${unlockTime?.toISOString()}`,
+            );
+
             if (locked) {
+                this.logger.warn(
+                    `Compte verrouillé détecté pour ${user.email} jusqu'à ${unlockTime?.toISOString()}`,
+                );
                 throw new ForbiddenException(
-                    `Compte verrouillé. Réessayez après ${unlockTime ? unlockTime.toLocaleString() : 'un certain temps'}`,
+                    `Compte verrouillé. Réessayez après ${
+                        unlockTime
+                            ? unlockTime.toLocaleString('fr-FR', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                              })
+                            : 'un certain temps'
+                    }`,
                 );
             }
 
-            // Vérifier si le compte est actif et vérifié
+            // 3. Vérifier si le compte est actif
             if (!user.isActive) {
+                this.logger.warn(
+                    `Tentative de connexion sur compte inactif: ${user.email}`,
+                );
                 throw new UnauthorizedException('Compte inactif');
             }
 
+            // 4. Vérifier si l'email est vérifié
             if (!user.isEmailVerified) {
-                throw new UnauthorizedException('Email non vérifié');
+                this.logger.warn(
+                    `Tentative de connexion sur compte non vérifié: ${user.email}`,
+                );
+                throw new UnauthorizedException(
+                    'Email non vérifié. Veuillez vérifier votre email avant de vous connecter.',
+                );
             }
 
-            // Vérifier le mot de passe
+            // 5. Vérifier le mot de passe
             const isPasswordValid = await this.validatePassword(
                 loginDto.password,
                 user.password,
             );
 
             if (!isPasswordValid) {
+                this.logger.warn(`Mot de passe invalide pour: ${user.email}`);
+
                 // Incrémenter le compteur d'échecs de connexion
                 await this.usersService.incrementLoginAttempts(user.id);
 
@@ -124,14 +159,17 @@ export class AuthService {
                 throw new UnauthorizedException('Identifiants invalides');
             }
 
-            // Réinitialiser le compteur d'échecs de connexion
+            // 6. Réinitialiser le compteur d'échecs de connexion (connexion réussie)
             await this.usersService.resetLoginAttempts(user.id);
 
-            // Déclencher l'événement de connexion réussie
-            await this.authEventsService.onUserLoggedIn(user);
+            this.logger.log(`Connexion réussie pour: ${user.email}`);
 
-            // Vérifier si l'authentification à deux facteurs est activée
+            // 7. Vérifier si l'authentification à deux facteurs est activée
             if (user.isTwoFactorEnabled) {
+                this.logger.debug(
+                    `2FA activé pour ${user.email}, génération du token temporaire`,
+                );
+
                 // Générer un token JWT spécial pour l'authentification 2FA
                 const tfaToken = this.tokenService.generateTwoFactorToken(user);
 
@@ -142,19 +180,26 @@ export class AuthService {
                     user: {
                         id: user.id,
                         email: user.email,
-                        firstName: user.firstName || '', // Assurez-vous que ce n'est jamais null
-                        lastName: user.lastName || '', // Assurez-vous que ce n'est jamais null
+                        firstName: user.firstName || '',
+                        lastName: user.lastName || '',
                         role: user.role,
                     },
                 };
             }
 
-            // Générer les tokens
+            // 8. Générer les tokens d'authentification
+            this.logger.debug(`Génération des tokens pour: ${user.email}`);
+
             const accessToken = this.tokenService.generateAccessToken(user);
             const refreshToken = this.tokenService.generateRefreshToken(user);
 
-            // Enregistrer le refresh token
+            // 9. Enregistrer le refresh token
             await this.tokenService.saveRefreshToken(user.id, refreshToken);
+
+            // 10. Déclencher l'événement de connexion réussie
+            await this.authEventsService.onUserLoggedIn(user);
+
+            this.logger.log(`Tokens générés avec succès pour: ${user.email}`);
 
             return {
                 accessToken,
@@ -162,14 +207,29 @@ export class AuthService {
                 user: {
                     id: user.id,
                     email: user.email,
-                    firstName: user.firstName || '', // Assurez-vous que ce n'est jamais null
-                    lastName: user.lastName || '', // Assurez-vous que ce n'est jamais null
+                    firstName: user.firstName || '',
+                    lastName: user.lastName || '',
                     role: user.role,
                 },
             };
         } catch (error) {
-            this.logger.error(`Erreur lors de la connexion: ${error.message}`);
-            throw error; // L'erreur sera gérée par le filtre d'exception
+            // Si c'est déjà une exception HTTP, la relancer
+            if (
+                error instanceof UnauthorizedException ||
+                error instanceof ForbiddenException ||
+                error instanceof BadRequestException
+            ) {
+                throw error;
+            }
+
+            // Pour toute autre erreur, logger et renvoyer une erreur générique
+            this.logger.error(
+                `Erreur lors de la connexion: ${error.message}`,
+                error.stack,
+            );
+            throw new UnauthorizedException(
+                'Une erreur est survenue lors de la connexion',
+            );
         }
     }
 
@@ -385,6 +445,10 @@ export class AuthService {
         recoveryCodes: string[];
     }> {
         try {
+            // Vérifier que le mot de passe est bien renseigné
+            if (!password || password.trim() === '') {
+                throw new BadRequestException('Le mot de passe est requis');
+            }
             const user = await this.usersService.findById(userId);
 
             // Vérifier le mot de passe
@@ -744,13 +808,25 @@ export class AuthService {
             const user = await this.usersService.findByEmail(email);
 
             // Vérifier si le compte est verrouillé
-            const { locked } = await this.usersService.isAccountLocked(user.id);
+            const { locked, unlockTime } =
+                await this.usersService.isAccountLocked(user.id);
+
             if (locked) {
+                // Log plus détaillé pour le verrouillage
+                this.logger.warn(
+                    `Tentative de connexion sur compte verrouillé: ${email}, déverrouillage à: ${unlockTime?.toISOString()}`,
+                );
+
+                await this.usersService.incrementLoginAttempts(user.id);
+                await this.authEventsService.onLoginFailed(user.email);
                 return null;
             }
 
             // Vérifier si le compte est actif et vérifié
             if (!user.isActive || !user.isEmailVerified) {
+                this.logger.warn(
+                    `Tentative de connexion sur compte inactif/non vérifié: ${email}`,
+                );
                 return null;
             }
 
@@ -767,6 +843,7 @@ export class AuthService {
                 // Déclencher l'événement d'échec de connexion
                 await this.authEventsService.onLoginFailed(user.email);
 
+                this.logger.warn(`Mot de passe invalide pour: ${email}`);
                 return null;
             }
 

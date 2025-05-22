@@ -35,7 +35,6 @@ import { TwoFactorAuthDto } from './dto/two-factor-auth.dto';
 import { VerifyTwoFactorDto } from './dto/verify-two-factor.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { SecurityHeadersInterceptor } from './interceptors/security-headers.interceptor';
 import {
@@ -92,8 +91,7 @@ export class AuthController {
     // ===== CONNEXION & DECONNEXION =====
 
     @Public()
-    @UseGuards(LocalAuthGuard)
-    @Throttle({ default: { limit: 3, ttl: 60000 } })
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     @Post('login')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Connexion utilisateur' })
@@ -160,7 +158,6 @@ export class AuthController {
     // ===== REFRESH TOKEN =====
 
     @Public()
-    @UseGuards(JwtRefreshGuard)
     @Post('refresh-token')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: "Rafraîchissement du token d'accès" })
@@ -206,7 +203,7 @@ export class AuthController {
         return result;
     }
 
-    @Public()
+    @UseGuards(JwtAuthGuard)
     @Post('recovery-code')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Connexion avec un code de récupération' })

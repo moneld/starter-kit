@@ -30,14 +30,16 @@ export const securityConfig = registerAs('security', () => ({
 
     // 2FA
     tfa: {
-        appName: process.env.TWO_FACTOR_APP_NAME,
-        recoveryCodeLength: process.env.TWO_FACTOR_RECOVERY_CODE_LENGTH,
+        appName: process.env.APP_NAME,
         recoveryCodesCount: process.env.TWO_FACTOR_RECOVERY_CODES_COUNT,
     },
 
     // Attempt Lockout
     attemptLockout: {
-        maxAttempts: process.env.ACCOUNT_LOCKOUT_MAX_ATTEMPTS,
-        lockDuration: process.env.ACCOUNT_LOCKOUT_DURATION,
+        maxAttempts: parseInt(
+            process.env.ACCOUNT_LOCKOUT_MAX_ATTEMPTS || '3',
+            10,
+        ),
+        lockDuration: process.env.ACCOUNT_LOCKOUT_DURATION || '15m',
     },
 }));

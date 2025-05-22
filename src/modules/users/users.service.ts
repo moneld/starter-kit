@@ -24,16 +24,59 @@ export class UsersService {
         private readonly prisma: PrismaService,
         private readonly configService: ConfigService,
     ) {
-        // Initialiser les options Argon2 une seule fois au démarrage du service
+        // Corriger les options Argon2
         this.argon2Options = {
             type: argon2.argon2id,
-            memoryCost: this.configService.get('security.argon2.memoryCost'),
-            timeCost: this.configService.get('security.argon2.timeCost'),
-            parallelism: this.configService.get(
-                'security.argon2.parallelismCost',
+            memoryCost: parseInt(
+                this.configService.get('security.argon2.memoryCost', '65536'),
+                10,
             ),
-            salt: this.configService.get('security.argon2.saltLength'),
+            timeCost: parseInt(
+                this.configService.get('security.argon2.timeCost', '3'),
+                10,
+            ),
+            parallelism: parseInt(
+                this.configService.get('security.argon2.parallelismCost', '4'),
+                10,
+            ),
+            // Retirer la propriété 'salt' - elle n'existe pas dans argon2.Options
+            // Le sel est généré automatiquement par argon2
         };
+
+        // Vérifier que les valeurs sont valides
+        if (
+            isNaN(this.argon2Options.memoryCost!) ||
+            this.argon2Options.memoryCost! <= 0
+        ) {
+            this.logger.warn(
+                'Configuration Argon2 memoryCost invalide, utilisation de la valeur par défaut',
+            );
+            this.argon2Options.memoryCost = 65536;
+        }
+
+        if (
+            isNaN(this.argon2Options.timeCost!) ||
+            this.argon2Options.timeCost! <= 0
+        ) {
+            this.logger.warn(
+                'Configuration Argon2 timeCost invalide, utilisation de la valeur par défaut',
+            );
+            this.argon2Options.timeCost = 3;
+        }
+
+        if (
+            isNaN(this.argon2Options.parallelism!) ||
+            this.argon2Options.parallelism! <= 0
+        ) {
+            this.logger.warn(
+                'Configuration Argon2 parallelism invalide, utilisation de la valeur par défaut',
+            );
+            this.argon2Options.parallelism = 4;
+        }
+
+        this.logger.log(
+            `Argon2 configuré avec: memoryCost=${this.argon2Options.memoryCost}, timeCost=${this.argon2Options.timeCost}, parallelism=${this.argon2Options.parallelism}`,
+        );
     }
 
     /**
@@ -371,10 +414,40 @@ export class UsersService {
                 'security.attemptLockout.maxAttempts',
                 5,
             );
-            const lockoutTime = this.configService.get<number>(
+
+            // Corriger la récupération de la durée de verrouillage
+            const lockoutDurationStr = this.configService.get<string>(
                 'security.attemptLockout.lockDuration',
-                15,
+                '15m',
             );
+
+            // Parser la durée de verrouillage (ex: "15m", "1h", "30")
+            let lockoutMinutes = 15; // valeur par défaut
+
+            if (lockoutDurationStr) {
+                // Vérifier si c'est un nombre simple (en minutes)
+                const numericValue = parseInt(lockoutDurationStr, 10);
+                if (!isNaN(numericValue)) {
+                    lockoutMinutes = numericValue;
+                } else {
+                    // Parser les formats comme "15m", "1h", etc.
+                    const match = lockoutDurationStr.match(/^(\d+)([mh])?$/i);
+                    if (match) {
+                        const value = parseInt(match[1], 10);
+                        const unit = match[2]?.toLowerCase() || 'm';
+
+                        if (unit === 'h') {
+                            lockoutMinutes = value * 60; // convertir heures en minutes
+                        } else {
+                            lockoutMinutes = value; // déjà en minutes
+                        }
+                    } else {
+                        this.logger.warn(
+                            `Format de durée de verrouillage invalide: ${lockoutDurationStr}, utilisation de 15 minutes par défaut`,
+                        );
+                    }
+                }
+            }
 
             // Incrémenter le compteur d'échecs
             const updatedAttempts = user.failedLoginAttempts + 1;
@@ -386,9 +459,21 @@ export class UsersService {
 
             // Vérifier si le seuil est atteint pour verrouiller le compte
             if (updatedAttempts >= maxAttempts) {
-                updateData.lockedUntil = addMinutes(new Date(), lockoutTime);
+                const lockUntilDate = addMinutes(new Date(), lockoutMinutes);
+
+                // Vérifier que la date est valide
+                if (isNaN(lockUntilDate.getTime())) {
+                    this.logger.error(
+                        `Date de verrouillage invalide calculée avec ${lockoutMinutes} minutes`,
+                    );
+                    // Utiliser une valeur par défaut de 15 minutes
+                    updateData.lockedUntil = addMinutes(new Date(), 15);
+                } else {
+                    updateData.lockedUntil = lockUntilDate;
+                }
+
                 this.logger.warn(
-                    `Compte verrouillé: ${userId} jusqu'à: ${updateData.lockedUntil}`,
+                    `Compte verrouillé: ${userId} jusqu'à: ${updateData.lockedUntil?.toISOString()}`,
                 );
             } else {
                 this.logger.debug(
@@ -417,20 +502,66 @@ export class UsersService {
     ): Promise<{ locked: boolean; unlockTime?: Date }> {
         const user = await this.findById(userId);
 
+        // Si aucun verrouillage n'est défini, le compte n'est pas verrouillé
+        if (!user.lockedUntil) {
+            return { locked: false };
+        }
+
+        // Convertir lockedUntil en objet Date si c'est une chaîne
+        const lockUntilDate =
+            user.lockedUntil instanceof Date
+                ? user.lockedUntil
+                : new Date(user.lockedUntil);
+
+        const now = new Date();
+
+        // Ajouter des logs pour déboguer
+        this.logger.debug(`Vérification verrouillage pour ${userId}:`);
+        this.logger.debug(
+            `- Date de déverrouillage: ${lockUntilDate.toISOString()}`,
+        );
+        this.logger.debug(`- Date actuelle: ${now.toISOString()}`);
+        this.logger.debug(
+            `- Comparaison (lockUntilDate > now): ${lockUntilDate > now}`,
+        );
+        this.logger.debug(
+            `- Temps restant en minutes: ${(lockUntilDate.getTime() - now.getTime()) / (1000 * 60)}`,
+        );
+
         // Vérifier si un verrouillage est actif
-        if (user.lockedUntil && isBefore(new Date(), user.lockedUntil)) {
+        if (lockUntilDate > now) {
+            // Le compte est verrouillé si lockedUntil est dans le futur
+            this.logger.warn(
+                `Compte verrouillé: ${userId} jusqu'à ${lockUntilDate.toISOString()}`,
+            );
             return {
                 locked: true,
-                unlockTime: user.lockedUntil,
+                unlockTime: lockUntilDate,
             };
         }
 
-        // Réinitialiser le verrouillage si la période est expirée
-        if (user.lockedUntil) {
+        // La période de verrouillage est expirée, nettoyer le champ
+        this.logger.log(
+            `Nettoyage du verrouillage expiré pour l'utilisateur: ${userId}`,
+        );
+
+        try {
             await this.prisma.user.update({
                 where: { id: userId },
-                data: { lockedUntil: null },
+                data: {
+                    lockedUntil: null,
+                    failedLoginAttempts: 0, // Réinitialiser aussi les tentatives
+                },
             });
+
+            this.logger.log(
+                `Verrouillage expiré nettoyé pour l'utilisateur: ${userId}`,
+            );
+        } catch (error) {
+            this.logger.error(
+                `Erreur lors du nettoyage du verrouillage expiré: ${error.message}`,
+            );
+            // Continuer même si le nettoyage échoue
         }
 
         return { locked: false };
@@ -567,10 +698,48 @@ export class UsersService {
      */
     private async hashPassword(password: string): Promise<string> {
         try {
-            return await argon2.hash(password, this.argon2Options);
+            // Ajouter une validation du mot de passe avant le hachage
+            if (
+                !password ||
+                typeof password !== 'string' ||
+                password.trim().length === 0
+            ) {
+                throw new Error('Le mot de passe ne peut pas être vide');
+            }
+
+            this.logger.debug('Hachage du mot de passe avec Argon2');
+            const hashedPassword = await argon2.hash(
+                password,
+                this.argon2Options,
+            );
+            this.logger.debug('Mot de passe haché avec succès');
+
+            return hashedPassword;
         } catch (error) {
-            this.logger.error(`Erreur hachage mot de passe: ${error.message}`);
-            throw new Error('Erreur lors du hachage du mot de passe');
+            this.logger.error(
+                `Erreur lors du hachage du mot de passe: ${error.message}`,
+            );
+            this.logger.error(
+                `Options Argon2 utilisées: ${JSON.stringify(this.argon2Options)}`,
+            );
+
+            // Essayer un hachage plus simple en cas d'erreur
+            try {
+                this.logger.debug(
+                    'Tentative de hachage avec les options par défaut',
+                );
+                return await argon2.hash(password, {
+                    type: argon2.argon2id,
+                    memoryCost: 65536,
+                    timeCost: 3,
+                    parallelism: 4,
+                });
+            } catch (fallbackError) {
+                this.logger.error(
+                    `Erreur lors du hachage de fallback: ${fallbackError.message}`,
+                );
+                throw new Error('Impossible de hacher le mot de passe');
+            }
         }
     }
 }

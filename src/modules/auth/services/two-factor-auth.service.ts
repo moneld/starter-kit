@@ -5,6 +5,7 @@ import { authenticator } from 'otplib';
 import * as qrcode from 'qrcode';
 import { CryptoService } from '../../../common/services/crypto.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class TwoFactorAuthService {
@@ -195,7 +196,7 @@ export class TwoFactorAuthService {
             }
 
             // Générer de nouveaux codes de récupération
-            const recoveryCodes = await this.generateRecoveryCodes();
+            const recoveryCodes = this.generateRecoveryCodes();
             const encryptedRecoveryCodes = this.cryptoService.encrypt(
                 JSON.stringify(recoveryCodes),
             );
@@ -220,7 +221,7 @@ export class TwoFactorAuthService {
     }
 
     /**
-     * Génère des codes de récupération pour 2FA
+     * Génère des codes de récupération pour l'authentification à deux facteurs
      */
     private async generateRecoveryCodes(): Promise<string[]> {
         const recoveryCodesCount = parseInt(
@@ -229,20 +230,28 @@ export class TwoFactorAuthService {
                 '8',
             ),
         );
-        const recoveryCodeLength = parseInt(
-            this.configService.get<string>(
-                'security.tfa.recoveryCodeLength',
-                '10',
-            ),
-        );
 
-        const recoveryCodes: string[] = [];
+        const codes: string[] = [];
         for (let i = 0; i < recoveryCodesCount; i++) {
-            recoveryCodes.push(
-                this.cryptoService.generateSecureToken(recoveryCodeLength),
-            );
+            // Format: 4 groupes de 4 caractères alphanumériques séparés par des tirets
+            const code = `${this.generateRandomString(4)}-${this.generateRandomString(4)}-${this.generateRandomString(4)}-${this.generateRandomString(4)}`;
+            codes.push(code);
         }
+        return codes;
+    }
 
-        return recoveryCodes;
+    /**
+     * Générer une chaîne aléatoire pour les codes de récupération
+     */
+    private generateRandomString(length: number): string {
+        // Caractères alphanumériques sans ambiguïtés (pas de 0/O, 1/I/l, etc.)
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const randomBytes = crypto.randomBytes(length);
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            const randomIndex = randomBytes[i] % chars.length;
+            result += chars.charAt(randomIndex);
+        }
+        return result;
     }
 }

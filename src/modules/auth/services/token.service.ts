@@ -6,6 +6,7 @@ import { User } from 'generated/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { CryptoService } from '../../../common/services/crypto.service';
 
 @Injectable()
 export class TokenService {
@@ -15,6 +16,7 @@ export class TokenService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly prisma: PrismaService,
+        private readonly cryptoService: CryptoService, // Ajouter CryptoService
     ) {}
 
     /**
@@ -86,7 +88,7 @@ export class TokenService {
     }
 
     /**
-     * Sauvegarde un token de rafraîchissement en base de données
+     * Sauvegarde un token de rafraîchissement en base de données (CHIFFRÉ)
      */
     async saveRefreshToken(
         userId: string,
@@ -108,16 +110,23 @@ export class TokenService {
             expiresIn = expiresIn.replace(/d$/, ''); // Remove 'd' suffix if present
             const expiresAt = addDays(new Date(), parseInt(expiresIn, 10));
 
-            // Créer un nouveau refresh token
+            // CHIFFRER le token avant de le stocker
+            const encryptedToken = this.cryptoService.encrypt(token);
+
+            // Créer un nouveau refresh token avec le token chiffré
             await this.prisma.refreshToken.create({
                 data: {
-                    token,
+                    token: encryptedToken, // Stocker le token chiffré
                     expiresAt,
                     userAgent,
                     ipAddress,
                     userId,
                 },
             });
+
+            this.logger.debug(
+                `Refresh token chiffré et sauvegardé pour l'utilisateur: ${userId}`,
+            );
         } catch (error) {
             this.logger.error(
                 `Erreur lors de l'enregistrement du refresh token: ${error.message}`,
@@ -127,44 +136,98 @@ export class TokenService {
     }
 
     /**
-     * Vérifie et récupère un token de rafraîchissement
+     * Vérifie et récupère un token de rafraîchissement (DÉCHIFFREMENT)
      */
     async getRefreshToken(token: string) {
-        const refreshToken = await this.prisma.refreshToken.findUnique({
-            where: { token },
-            include: { user: true },
-        });
+        try {
+            // Récupérer tous les refresh tokens de la base pour cet utilisateur
+            // (on ne peut pas faire une requête directe car les tokens sont chiffrés)
+            const refreshTokens = await this.prisma.refreshToken.findMany({
+                where: {
+                    expiresAt: { gt: new Date() }, // Seulement les tokens non expirés
+                    isRevoked: false,
+                },
+                include: { user: true },
+            });
 
-        if (!refreshToken) {
+            // Parcourir les tokens et déchiffrer pour trouver une correspondance
+            for (const refreshToken of refreshTokens) {
+                try {
+                    const decryptedToken = this.cryptoService.decrypt(
+                        refreshToken.token,
+                    );
+
+                    if (decryptedToken === token) {
+                        // Token trouvé et valide
+                        if (
+                            isPast(refreshToken.expiresAt) ||
+                            refreshToken.isRevoked
+                        ) {
+                            return null;
+                        }
+
+                        // Retourner le refresh token avec le token déchiffré pour utilisation
+                        return {
+                            ...refreshToken,
+                            token: decryptedToken, // Retourner le token en clair pour utilisation
+                        };
+                    }
+                } catch (decryptError) {
+                    // Ignorer les erreurs de déchiffrement (token avec ancienne clé peut-être)
+                    this.logger.debug(
+                        `Impossible de déchiffrer un refresh token: ${decryptError.message}`,
+                    );
+                    continue;
+                }
+            }
+
+            return null; // Aucun token correspondant trouvé
+        } catch (error) {
+            this.logger.error(
+                `Erreur lors de la récupération du refresh token: ${error.message}`,
+            );
             return null;
         }
-
-        // Vérifier si le token n'a pas expiré
-        if (isPast(refreshToken.expiresAt) || refreshToken.isRevoked) {
-            return null;
-        }
-
-        return refreshToken;
     }
 
     /**
-     * Révoque un token de rafraîchissement
+     * Révoque un token de rafraîchissement (avec déchiffrement pour trouver le bon)
      */
     async revokeRefreshToken(token: string): Promise<boolean> {
         try {
-            const refreshToken = await this.prisma.refreshToken.findUnique({
-                where: { token },
+            // Récupérer tous les refresh tokens non expirés
+            const refreshTokens = await this.prisma.refreshToken.findMany({
+                where: {
+                    expiresAt: { gt: new Date() },
+                    isRevoked: false,
+                },
             });
 
-            if (!refreshToken) {
-                return false;
+            // Trouver le token correspondant en déchiffrant
+            for (const refreshToken of refreshTokens) {
+                try {
+                    const decryptedToken = this.cryptoService.decrypt(
+                        refreshToken.token,
+                    );
+
+                    if (decryptedToken === token) {
+                        // Token trouvé, le supprimer
+                        await this.prisma.refreshToken.delete({
+                            where: { id: refreshToken.id },
+                        });
+
+                        this.logger.debug(
+                            `Refresh token révoqué: ${refreshToken.id}`,
+                        );
+                        return true;
+                    }
+                } catch (decryptError) {
+                    // Ignorer les erreurs de déchiffrement
+                    continue;
+                }
             }
 
-            await this.prisma.refreshToken.delete({
-                where: { id: refreshToken.id },
-            });
-
-            return true;
+            return false; // Token non trouvé
         } catch (error) {
             this.logger.error(
                 `Erreur lors de la révocation du token: ${error.message}`,
@@ -181,6 +244,10 @@ export class TokenService {
             await this.prisma.refreshToken.deleteMany({
                 where: { userId },
             });
+
+            this.logger.debug(
+                `Tous les refresh tokens révoqués pour l'utilisateur: ${userId}`,
+            );
             return true;
         } catch (error) {
             this.logger.error(
@@ -191,7 +258,7 @@ export class TokenService {
     }
 
     /**
-     * Crée un token de vérification d'email
+     * Crée un token de vérification d'email (CHIFFRÉ)
      */
     async createEmailVerificationToken(userId: string): Promise<string> {
         try {
@@ -204,15 +271,19 @@ export class TokenService {
                 where: { userId },
             });
 
-            // Créer le nouveau token
+            // CHIFFRER le token de vérification
+            const encryptedToken = this.cryptoService.encrypt(token);
+
+            // Créer le nouveau token avec chiffrement
             await this.prisma.verificationToken.create({
                 data: {
-                    token,
+                    token: encryptedToken, // Stocker le token chiffré
                     expiresAt,
                     userId,
                 },
             });
 
+            // Retourner le token en clair pour l'envoi par email
             return token;
         } catch (error) {
             this.logger.error(
@@ -225,32 +296,55 @@ export class TokenService {
     }
 
     /**
-     * Vérifie un token de vérification d'email
+     * Vérifie un token de vérification d'email (DÉCHIFFREMENT)
      */
     async verifyEmailToken(token: string) {
-        const verificationToken =
-            await this.prisma.verificationToken.findUnique({
-                where: { token },
-                include: { user: true },
-            });
+        try {
+            // Récupérer tous les tokens de vérification non expirés
+            const verificationTokens =
+                await this.prisma.verificationToken.findMany({
+                    where: {
+                        expiresAt: { gt: new Date() },
+                    },
+                    include: { user: true },
+                });
 
-        if (!verificationToken) {
+            // Parcourir et déchiffrer pour trouver une correspondance
+            for (const verificationToken of verificationTokens) {
+                try {
+                    const decryptedToken = this.cryptoService.decrypt(
+                        verificationToken.token,
+                    );
+
+                    if (decryptedToken === token) {
+                        // Token trouvé et valide
+                        if (isPast(verificationToken.expiresAt)) {
+                            // Token expiré, le supprimer
+                            await this.prisma.verificationToken.delete({
+                                where: { id: verificationToken.id },
+                            });
+                            return null;
+                        }
+
+                        return verificationToken;
+                    }
+                } catch (decryptError) {
+                    // Ignorer les erreurs de déchiffrement
+                    continue;
+                }
+            }
+
+            return null; // Aucun token correspondant trouvé
+        } catch (error) {
+            this.logger.error(
+                `Erreur lors de la vérification du token d'email: ${error.message}`,
+            );
             return null;
         }
-
-        // Vérifier si le token n'a pas expiré
-        if (isPast(verificationToken.expiresAt)) {
-            await this.prisma.verificationToken.delete({
-                where: { id: verificationToken.id },
-            });
-            return null;
-        }
-
-        return verificationToken;
     }
 
     /**
-     * Crée un token de réinitialisation de mot de passe
+     * Crée un token de réinitialisation de mot de passe (CHIFFRÉ)
      */
     async createPasswordResetToken(userId: string): Promise<string> {
         try {
@@ -263,15 +357,19 @@ export class TokenService {
                 where: { userId },
             });
 
-            // Créer le nouveau token
+            // CHIFFRER le token de réinitialisation
+            const encryptedToken = this.cryptoService.encrypt(token);
+
+            // Créer le nouveau token avec chiffrement
             await this.prisma.passwordResetToken.create({
                 data: {
-                    token,
+                    token: encryptedToken, // Stocker le token chiffré
                     expiresAt,
                     userId,
                 },
             });
 
+            // Retourner le token en clair pour l'envoi par email
             return token;
         } catch (error) {
             this.logger.error(
@@ -284,27 +382,50 @@ export class TokenService {
     }
 
     /**
-     * Vérifie un token de réinitialisation de mot de passe
+     * Vérifie un token de réinitialisation de mot de passe (DÉCHIFFREMENT)
      */
     async verifyPasswordResetToken(token: string) {
-        const passwordResetToken =
-            await this.prisma.passwordResetToken.findUnique({
-                where: { token },
-                include: { user: true },
-            });
+        try {
+            // Récupérer tous les tokens de réinitialisation non expirés
+            const passwordResetTokens =
+                await this.prisma.passwordResetToken.findMany({
+                    where: {
+                        expiresAt: { gt: new Date() },
+                    },
+                    include: { user: true },
+                });
 
-        if (!passwordResetToken) {
+            // Parcourir et déchiffrer pour trouver une correspondance
+            for (const passwordResetToken of passwordResetTokens) {
+                try {
+                    const decryptedToken = this.cryptoService.decrypt(
+                        passwordResetToken.token,
+                    );
+
+                    if (decryptedToken === token) {
+                        // Token trouvé et valide
+                        if (isPast(passwordResetToken.expiresAt)) {
+                            // Token expiré, le supprimer
+                            await this.prisma.passwordResetToken.delete({
+                                where: { id: passwordResetToken.id },
+                            });
+                            return null;
+                        }
+
+                        return passwordResetToken;
+                    }
+                } catch (decryptError) {
+                    // Ignorer les erreurs de déchiffrement
+                    continue;
+                }
+            }
+
+            return null; // Aucun token correspondant trouvé
+        } catch (error) {
+            this.logger.error(
+                `Erreur lors de la vérification du token de réinitialisation: ${error.message}`,
+            );
             return null;
         }
-
-        // Vérifier si le token n'a pas expiré
-        if (isPast(passwordResetToken.expiresAt)) {
-            await this.prisma.passwordResetToken.delete({
-                where: { id: passwordResetToken.id },
-            });
-            return null;
-        }
-
-        return passwordResetToken;
     }
 }
