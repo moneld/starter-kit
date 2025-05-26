@@ -20,6 +20,10 @@ import { VerifyTwoFactorDto } from './dto/verify-two-factor.dto';
 import { AuthEventsService } from './services/auth-events.service';
 import { TokenService } from './services/token.service';
 import { TwoFactorAuthService } from './services/two-factor-auth.service';
+import {
+    AnomalyDetectionService,
+    SecurityAlert,
+} from '../../common/services/anomaly-detection.service';
 
 @Injectable()
 export class AuthService {
@@ -31,6 +35,7 @@ export class AuthService {
         private readonly tokenService: TokenService,
         private readonly twoFactorAuthService: TwoFactorAuthService,
         private readonly authEventsService: AuthEventsService,
+        private readonly anomalyDetectionService: AnomalyDetectionService,
     ) {}
 
     /**
@@ -72,12 +77,17 @@ export class AuthService {
     }
 
     /**
-     * Connecte un utilisateur
+     * Connecte un utilisateur avec analyse d'anomalies
      */
-    async login(loginDto: LoginDto): Promise<{
+    async login(
+        loginDto: LoginDto,
+        ipAddress?: string,
+        userAgent?: string,
+    ): Promise<{
         accessToken: string;
         refreshToken: string;
         requiresTwoFactor?: boolean;
+        securityAlerts?: SecurityAlert[]; // ✅ TYPE EXPLICITE
         user: {
             id: string;
             email: string;
@@ -87,96 +97,85 @@ export class AuthService {
         };
     }> {
         try {
-            // 1. Trouver l'utilisateur par email
+            // Code de validation existant...
             let user;
             try {
                 user = await this.usersService.findByEmail(loginDto.email);
             } catch (error) {
-                // Ne pas divulguer si l'email existe ou non
                 throw new UnauthorizedException('Identifiants invalides');
             }
 
-            // 2. Vérifier si le compte est verrouillé
             const { locked, unlockTime } =
                 await this.usersService.isAccountLocked(user.id);
-
-            this.logger.debug(
-                `Vérification verrouillage pour ${user.email}: locked=${locked}, unlockTime=${unlockTime?.toISOString()}`,
-            );
-
             if (locked) {
-                this.logger.warn(
-                    `Compte verrouillé détecté pour ${user.email} jusqu'à ${unlockTime?.toISOString()}`,
-                );
                 throw new ForbiddenException(
-                    `Compte verrouillé. Réessayez après ${
-                        unlockTime
-                            ? unlockTime.toLocaleString('fr-FR', {
-                                  year: 'numeric',
-                                  month: '2-digit',
-                                  day: '2-digit',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                              })
-                            : 'un certain temps'
-                    }`,
+                    `Compte verrouillé. Réessayez après ${unlockTime?.toLocaleString('fr-FR')}`,
                 );
             }
 
-            // 3. Vérifier si le compte est actif
             if (!user.isActive) {
-                this.logger.warn(
-                    `Tentative de connexion sur compte inactif: ${user.email}`,
-                );
                 throw new UnauthorizedException('Compte inactif');
             }
 
-            // 4. Vérifier si l'email est vérifié
             if (!user.isEmailVerified) {
-                this.logger.warn(
-                    `Tentative de connexion sur compte non vérifié: ${user.email}`,
-                );
-                throw new UnauthorizedException(
-                    'Email non vérifié. Veuillez vérifier votre email avant de vous connecter.',
-                );
+                throw new UnauthorizedException('Email non vérifié');
             }
 
-            // 5. Vérifier le mot de passe
             const isPasswordValid = await this.validatePassword(
                 loginDto.password,
                 user.password,
             );
-
             if (!isPasswordValid) {
-                this.logger.warn(`Mot de passe invalide pour: ${user.email}`);
-
-                // Incrémenter le compteur d'échecs de connexion
                 await this.usersService.incrementLoginAttempts(user.id);
-
-                // Déclencher l'événement d'échec de connexion
                 await this.authEventsService.onLoginFailed(user.email);
-
                 throw new UnauthorizedException('Identifiants invalides');
             }
 
-            // 6. Réinitialiser le compteur d'échecs de connexion (connexion réussie)
             await this.usersService.resetLoginAttempts(user.id);
 
-            this.logger.log(`Connexion réussie pour: ${user.email}`);
+            // ✅ ANALYSE D'ANOMALIES AVEC TYPE EXPLICITE
+            let securityAlerts: SecurityAlert[] = [];
+            if (ipAddress && userAgent) {
+                try {
+                    securityAlerts =
+                        await this.anomalyDetectionService.analyzeLogin(
+                            user,
+                            ipAddress,
+                            userAgent,
+                        );
 
-            // 7. Vérifier si l'authentification à deux facteurs est activée
+                    const criticalAlerts = securityAlerts.filter(
+                        (alert) =>
+                            alert.severity === 'CRITICAL' ||
+                            alert.severity === 'HIGH',
+                    );
+
+                    if (criticalAlerts.length > 0) {
+                        this.logger.warn(
+                            `Alertes de sécurité pour ${user.email}:`,
+                            {
+                                userId: user.id,
+                                alertsCount: criticalAlerts.length,
+                                alertTypes: criticalAlerts.map((a) => a.type),
+                                ipAddress,
+                                userAgent,
+                            },
+                        );
+                    }
+                } catch (error) {
+                    this.logger.error(
+                        `Erreur analyse anomalies pour ${user.email}: ${error.message}`,
+                    );
+                }
+            }
+
             if (user.isTwoFactorEnabled) {
-                this.logger.debug(
-                    `2FA activé pour ${user.email}, génération du token temporaire`,
-                );
-
-                // Générer un token JWT spécial pour l'authentification 2FA
                 const tfaToken = this.tokenService.generateTwoFactorToken(user);
-
                 return {
                     accessToken: tfaToken,
-                    refreshToken: '', // Pas de refresh token avant la 2FA complète
+                    refreshToken: '',
                     requiresTwoFactor: true,
+                    securityAlerts,
                     user: {
                         id: user.id,
                         email: user.email,
@@ -187,23 +186,26 @@ export class AuthService {
                 };
             }
 
-            // 8. Générer les tokens d'authentification
-            this.logger.debug(`Génération des tokens pour: ${user.email}`);
-
             const accessToken = this.tokenService.generateAccessToken(user);
             const refreshToken = this.tokenService.generateRefreshToken(user);
 
-            // 9. Enregistrer le refresh token
-            await this.tokenService.saveRefreshToken(user.id, refreshToken);
+            await this.tokenService.saveRefreshToken(
+                user.id,
+                refreshToken,
+                userAgent,
+                ipAddress,
+            );
 
-            // 10. Déclencher l'événement de connexion réussie
-            await this.authEventsService.onUserLoggedIn(user);
-
-            this.logger.log(`Tokens générés avec succès pour: ${user.email}`);
+            await this.authEventsService.onUserLoggedIn(
+                user,
+                ipAddress,
+                userAgent,
+            );
 
             return {
                 accessToken,
                 refreshToken,
+                securityAlerts,
                 user: {
                     id: user.id,
                     email: user.email,
@@ -213,7 +215,6 @@ export class AuthService {
                 },
             };
         } catch (error) {
-            // Si c'est déjà une exception HTTP, la relancer
             if (
                 error instanceof UnauthorizedException ||
                 error instanceof ForbiddenException ||
@@ -222,7 +223,6 @@ export class AuthService {
                 throw error;
             }
 
-            // Pour toute autre erreur, logger et renvoyer une erreur générique
             this.logger.error(
                 `Erreur lors de la connexion: ${error.message}`,
                 error.stack,

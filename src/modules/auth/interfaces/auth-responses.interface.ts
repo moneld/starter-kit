@@ -1,3 +1,5 @@
+import { SecurityAlert } from '../../../common/services/anomaly-detection.service';
+
 export interface AuthTokens {
     accessToken: string;
     refreshToken: string;
@@ -5,6 +7,7 @@ export interface AuthTokens {
 
 export interface LoginResponse extends AuthTokens {
     requiresTwoFactor?: boolean;
+    securityAlerts?: SecurityAlert[];
     user: {
         id: string;
         email: string;

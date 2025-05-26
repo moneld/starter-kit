@@ -42,4 +42,12 @@ export const securityConfig = registerAs('security', () => ({
         ),
         lockDuration: process.env.ACCOUNT_LOCKOUT_DURATION || '15m',
     },
+
+    // Session
+    session: {
+        maxConcurrentSessions: process.env.SESSION_MAX_CONCURRENT_SESSIONS,
+        alertEmailEnabled: process.env.SESSION_ALERT_EMAIL_ENABLED,
+        sessionAutoRevokeEnabled: process.env.SESSION_AUTO_REVOKE_ENABLED,
+        sessionGeoTrackingEnabled: process.env.SESSION_GEO_TRACKING_ENABLED,
+    },
 }));

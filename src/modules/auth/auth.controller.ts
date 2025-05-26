@@ -1,10 +1,12 @@
 import {
+    BadRequestException,
     Body,
     ClassSerializerInterceptor,
     Controller,
     Get,
     HttpCode,
     HttpStatus,
+    Logger,
     Param,
     Post,
     Query,
@@ -34,7 +36,6 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { TwoFactorAuthDto } from './dto/two-factor-auth.dto';
 import { VerifyTwoFactorDto } from './dto/verify-two-factor.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { SecurityHeadersInterceptor } from './interceptors/security-headers.interceptor';
 import {
@@ -46,14 +47,21 @@ import {
 } from './interfaces/auth-responses.interface';
 import { AuthEventsService } from './services/auth-events.service';
 import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import {
+    AnomalyDetectionService,
+    SecurityAlert, SessionMetrics,
+} from '../../common/services/anomaly-detection.service';
 
 @ApiTags('Authentification')
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor, SecurityHeadersInterceptor)
 export class AuthController {
+    private readonly logger = new Logger(AuthController.name);
+
     constructor(
         private readonly authService: AuthService,
         private readonly authEventsService: AuthEventsService,
+        private readonly anomalyDetectionService: AnomalyDetectionService,
     ) {}
 
     // ===== INSCRIPTION & VERIFICATION =====
@@ -94,21 +102,48 @@ export class AuthController {
     @Throttle({ default: { limit: 10, ttl: 60000 } })
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Connexion utilisateur' })
-    @ApiResponse({ status: 200, description: 'Connexion réussie' })
-    @ApiResponse({ status: 401, description: 'Identifiants invalides' })
-    @ApiResponse({ status: 403, description: 'Compte verrouillé' })
+    @ApiOperation({ summary: 'Connexion utilisateur avec analyse de sécurité' })
+    @ApiResponse({
+        status: 200,
+        description: 'Connexion réussie avec alertes de sécurité',
+        schema: {
+            properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                requiresTwoFactor: { type: 'boolean' },
+                securityAlerts: {
+                    type: 'array',
+                    items: {
+                        properties: {
+                            type: { type: 'string' },
+                            severity: { type: 'string' },
+                            details: { type: 'object' },
+                        },
+                    },
+                },
+                user: { type: 'object' },
+            },
+        },
+    })
     async login(
         @Body() loginDto: LoginDto,
         @Req() req: Request,
-    ): Promise<LoginResponse> {
-        // Capturer l'adresse IP et l'user agent pour la journalisation
+    ): Promise<LoginResponse & { securityAlerts?: SecurityAlert[] }> {
         const ipAddress = req.ip;
         const userAgent = req.headers['user-agent'];
 
-        const result = await this.authService.login(loginDto);
+        const result = await this.authService.login(
+            loginDto,
+            ipAddress,
+            userAgent,
+        );
 
-        // Si connexion réussie sans 2FA, enregistrer l'événement
+        if (result.securityAlerts && result.securityAlerts.length > 0) {
+            this.logger.log(
+                `Connexion avec ${result.securityAlerts.length} alertes de sécurité pour ${result.user.email}`,
+            );
+        }
+
         if (!result.requiresTwoFactor) {
             await this.authEventsService.onUserLoggedIn(
                 result.user as any,
@@ -381,5 +416,70 @@ export class AuthController {
     async unlockUser(@Param('id') userId: string): Promise<MessageResponse> {
         await this.authService.unlockUserAccount(userId);
         return { message: 'Compte utilisateur déverrouillé avec succès' };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('security/metrics')
+    @ApiOperation({
+        summary: "Obtenir les métriques de sécurité de l'utilisateur",
+    })
+    @ApiResponse({ status: 200, description: 'Métriques de sécurité' })
+    @ApiBearerAuth('access-token')
+    async getUserSecurityMetrics(
+        @CurrentUser('id') userId: string,
+    ): Promise<SessionMetrics> {
+        return await this.anomalyDetectionService.getUserSecurityMetrics(
+            userId,
+        );
+    }
+
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @Get('security/dashboard')
+    @ApiOperation({ summary: 'Dashboard de sécurité (Admin)' })
+    @ApiResponse({ status: 200, description: 'Dashboard de sécurité' })
+    @ApiBearerAuth('access-token')
+    async getSecurityDashboard(): Promise<{
+        totalActiveSessions: number;
+        usersWithMultipleSessions: number;
+        newSessionsLast24h: number;
+        configuration: any;
+    } | null> {
+        return await this.anomalyDetectionService.getSecurityDashboard();
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('security/revoke-suspicious-sessions')
+    @ApiOperation({ summary: 'Révoquer les sessions suspectes' })
+    @ApiResponse({ status: 200, description: 'Sessions suspectes révoquées' })
+    @ApiBearerAuth('access-token')
+    async revokeSuspiciousSessions(
+        @CurrentUser('id') userId: string,
+    ): Promise<MessageResponse> {
+        try {
+            const metrics =
+                await this.anomalyDetectionService.getUserSecurityMetrics(
+                    userId,
+                );
+
+            if (metrics.suspiciousScore > 30) {
+                await this.authService.logoutAll(userId);
+
+                return {
+                    message: `Sessions suspectes révoquées. Score de risque: ${metrics.suspiciousScore}`,
+                };
+            }
+
+            return {
+                message: 'Aucune session suspecte détectée',
+            };
+        } catch (error) {
+            this.logger.error(
+                `Erreur révocation sessions suspectes: ${error.message}`,
+            );
+            throw new BadRequestException(
+                'Erreur lors de la révocation des sessions',
+            );
+        }
     }
 }

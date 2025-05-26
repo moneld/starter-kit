@@ -16,7 +16,7 @@ import { TwoFactorAuthService } from './services/two-factor-auth.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { CryptoService } from '../../common/services/crypto.service';
-
+import { AnomalyDetectionService } from '../../common/services/anomaly-detection.service';
 
 @Module({
     imports: [
@@ -45,6 +45,7 @@ import { CryptoService } from '../../common/services/crypto.service';
         JwtStrategy,
         JwtRefreshStrategy,
         CryptoService,
+        AnomalyDetectionService,
         {
             provide: APP_GUARD,
             useClass: JwtAuthGuard,
