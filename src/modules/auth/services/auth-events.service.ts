@@ -1,16 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { User } from 'generated/prisma';
-import { MailService } from '../../mail/mail.service';
+
+import { INJECTION_TOKENS } from 'src/common/constants/injection-tokens';
+import { IEmailService } from 'src/modules/mail/interfaces/email-provider.interface';
 
 @Injectable()
 export class AuthEventsService {
     private readonly logger = new Logger(AuthEventsService.name);
 
     constructor(
-        private readonly mailService: MailService,
-        private readonly configService: ConfigService,
-    ) {}
+        @Inject(INJECTION_TOKENS.EMAIL_SERVICE)
+        private readonly emailService: IEmailService,
+    ) { }
 
     /**
      * Gère l'événement d'inscription utilisateur
@@ -23,7 +24,7 @@ export class AuthEventsService {
 
         try {
             // Envoyer l'email de vérification
-            const emailSent = await this.mailService.sendVerificationEmail(
+            const emailSent = await this.emailService.sendVerificationEmail(
                 user.email,
                 verificationToken,
                 user.firstName || undefined, // Corriger le problème de type null vs undefined
@@ -49,7 +50,7 @@ export class AuthEventsService {
 
         try {
             // Envoyer l'email de bienvenue
-            const emailSent = await this.mailService.sendWelcomeEmail(
+            const emailSent = await this.emailService.sendWelcomeEmail(
                 user.email,
                 user.firstName || undefined, // Corriger le problème de type null vs undefined
             );
@@ -79,7 +80,7 @@ export class AuthEventsService {
 
         try {
             // Envoyer l'email de réinitialisation
-            const emailSent = await this.mailService.sendPasswordResetEmail(
+            const emailSent = await this.emailService.sendPasswordResetEmail(
                 user.email,
                 resetToken,
                 user.firstName || undefined, // Corriger le problème de type null vs undefined

@@ -1,20 +1,21 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { PrismaService } from '../../modules/prisma/prisma.service';
-import { MailService } from '../../modules/mail/mail.service';
-import * as geoip from 'geoip-lite';
 import { User } from 'generated/prisma';
+import * as geoip from 'geoip-lite';
+import { IEmailService } from 'src/modules/mail/interfaces/email-provider.interface';
+import { PrismaService } from '../../modules/prisma/prisma.service';
+import { INJECTION_TOKENS } from '../constants/injection-tokens';
 
 // ✅ EXPORT DES INTERFACES POUR RÉSOUDRE LES ERREURS TS4053
 export interface SecurityAlert {
     userId: string;
     type:
-        | 'SUSPICIOUS_LOGIN'
-        | 'MULTIPLE_SESSIONS'
-        | 'LOCATION_CHANGE'
-        | 'UNUSUAL_ACTIVITY'
-        | 'BRUTE_FORCE';
+    | 'SUSPICIOUS_LOGIN'
+    | 'MULTIPLE_SESSIONS'
+    | 'LOCATION_CHANGE'
+    | 'UNUSUAL_ACTIVITY'
+    | 'BRUTE_FORCE';
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     details: Record<string, any>;
     timestamp: Date;
@@ -46,7 +47,8 @@ export class AnomalyDetectionService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly mailService: MailService,
+        @Inject(INJECTION_TOKENS.EMAIL_SERVICE)
+        private readonly emailService: IEmailService,
         private readonly configService: ConfigService,
     ) {
         this.securityConfig = {
@@ -227,9 +229,9 @@ export class AnomalyDetectionService {
             // ✅ CORRECTION: Assurer que isNewLocation est toujours boolean
             const isNewLocation = Boolean(
                 this.securityConfig.geoTrackingEnabled &&
-                    currentGeo &&
-                    knownCountries.size > 0 &&
-                    !knownCountries.has(currentGeo.country),
+                currentGeo &&
+                knownCountries.size > 0 &&
+                !knownCountries.has(currentGeo.country),
             );
 
             const knownDevices = new Set<string>();
@@ -279,7 +281,7 @@ export class AnomalyDetectionService {
             const averageSessionDuration =
                 sessionDurations.length > 0
                     ? sessionDurations.reduce((a, b) => a + b, 0) /
-                      sessionDurations.length
+                    sessionDurations.length
                     : 0;
 
             const recentLoginAttempts = await this.prisma.user.findUnique({
@@ -420,7 +422,7 @@ export class AnomalyDetectionService {
             ) {
                 const severity =
                     metrics.activeSessionCount >
-                    this.securityConfig.maxConcurrentSessions * 1.5
+                        this.securityConfig.maxConcurrentSessions * 1.5
                         ? 'HIGH'
                         : 'MEDIUM';
 
@@ -586,7 +588,7 @@ export class AnomalyDetectionService {
             details: alert.details,
         });
     }
-
+    //TODO: Revoir la méthode pour l'envoyer des mails de sécurité
     private async sendSecurityAlert(alert: SecurityAlert): Promise<void> {
         try {
             const user = await this.prisma.user.findUnique({
@@ -648,11 +650,7 @@ export class AnomalyDetectionService {
             message += `Date : ${alert.timestamp.toLocaleString('fr-FR')}\n`;
             message += `Niveau d'alerte : ${alert.severity}`;
 
-            await this.mailService.sendMail({
-                to: user.email,
-                subject,
-                text: message,
-            });
+            await this.emailService.sendSecurityAlert(user.email, message);
 
             this.logger.log(
                 `Alerte sécurité envoyée à ${user.email} pour ${alert.type}`,
