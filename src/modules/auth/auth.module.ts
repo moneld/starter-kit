@@ -35,6 +35,7 @@ import { ExceptionModule } from 'src/common/modules/exception.module';
 import { SecurityModule } from 'src/common/modules/security.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { PasswordExpiryService } from './services/password-expiry.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
@@ -83,6 +84,7 @@ const authProviders = [
     AuthEventsService,
     JwtStrategy,
     JwtRefreshStrategy,
+    PasswordExpiryService,
     // Guards
     {
         provide: APP_GUARD,
@@ -107,7 +109,9 @@ const authProviders = [
             useFactory: async (configService: ConfigService) => ({
                 secret: configService.get<string>('security.jwt.accessSecret'),
                 signOptions: {
-                    expiresIn: configService.get<string>('security.jwt.accessExpiration'),
+                    expiresIn: configService.get<string>(
+                        'security.jwt.accessExpiration',
+                    ),
                 },
             }),
         }),
@@ -123,4 +127,4 @@ const authProviders = [
         INJECTION_TOKENS.TWO_FACTOR_SERVICE,
     ],
 })
-export class AuthModule { }
+export class AuthModule {}

@@ -9,11 +9,10 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
 import * as argon2 from 'argon2';
-import { addHours, addMinutes, isBefore, isPast } from 'date-fns';
+import { addDays, addHours, addMinutes, isPast } from 'date-fns';
 import { Prisma, User, UserRole } from 'generated/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -572,15 +571,20 @@ export class UsersService {
      */
     async changePassword(userId: string, newPassword: string): Promise<void> {
         try {
-            // Hacher le nouveau mot de passe
             const hashedPassword = await this.hashPassword(newPassword);
+            const now = new Date();
+            const passwordExpiresAt = addDays(now, 180); // 6 mois
 
             await this.prisma.$transaction(async (prisma) => {
-                // Mettre à jour le mot de passe
+                // Mettre à jour le mot de passe et les dates
                 await prisma.user.update({
                     where: { id: userId },
                     data: {
                         password: hashedPassword,
+                        passwordChangedAt: now,
+                        passwordExpiresAt: passwordExpiresAt,
+                        forcePasswordChange: false,
+                        lastPasswordExpiryWarning: null, // Réinitialiser les avertissements
                     },
                 });
 
@@ -590,11 +594,11 @@ export class UsersService {
                 });
             });
 
-            this.logger.log(`Mot de passe changé avec succès: ${userId}`);
-        } catch (error) {
-            this.logger.error(
-                `Erreur changement mot de passe: ${error.message}`,
+            this.logger.log(
+                `Password changed successfully for user: ${userId}`,
             );
+        } catch (error) {
+            this.logger.error(`Error changing password: ${error.message}`);
             throw error;
         }
     }

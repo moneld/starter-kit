@@ -58,7 +58,9 @@ import { ITwoFactorService } from './interfaces/two-factor.interface';
 // Services
 import { Throttle } from '@nestjs/throttler';
 import { UsersService } from '../users/users.service';
+import { SkipPasswordExpiry } from './decorators/skip-password-expiry.decorator';
 import { EmailVerificationService } from './services/email-verification.service';
+import { PasswordExpiryService } from './services/password-expiry.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -75,7 +77,8 @@ export class AuthController {
         private readonly twoFactorService: ITwoFactorService,
         private readonly emailVerificationService: EmailVerificationService,
         private readonly usersService: UsersService,
-    ) { }
+        private readonly passwordExpiryService: PasswordExpiryService,
+    ) {}
 
     // ===== REGISTRATION & VERIFICATION =====
 
@@ -101,11 +104,14 @@ export class AuthController {
 
         // Send verification email if needed
         if (verificationToken) {
-            await this.emailVerificationService.sendVerificationEmail(user.email);
+            await this.emailVerificationService.sendVerificationEmail(
+                user.email,
+            );
         }
 
         return {
-            message: 'Registration successful. Please check your email to verify your account.',
+            message:
+                'Registration successful. Please check your email to verify your account.',
         };
     }
 
@@ -128,7 +134,10 @@ export class AuthController {
         @Body('email') email: string,
     ): Promise<MessageResponse> {
         await this.emailVerificationService.sendVerificationEmail(email);
-        return { message: 'If your email is registered, you will receive a verification email.' };
+        return {
+            message:
+                'If your email is registered, you will receive a verification email.',
+        };
     }
 
     // ===== LOGIN & LOGOUT =====
@@ -154,7 +163,9 @@ export class AuthController {
     @ApiOperation({ summary: 'Logout user' })
     @ApiResponse({ status: 200, description: 'Logout successful' })
     @ApiBearerAuth('access-token')
-    async logout(@Body('refreshToken') refreshToken: string): Promise<MessageResponse> {
+    async logout(
+        @Body('refreshToken') refreshToken: string,
+    ): Promise<MessageResponse> {
         await this.authService.logout(refreshToken);
         return { message: 'Logout successful' };
     }
@@ -165,7 +176,9 @@ export class AuthController {
     @ApiOperation({ summary: 'Logout from all sessions' })
     @ApiResponse({ status: 200, description: 'Logged out from all sessions' })
     @ApiBearerAuth('access-token')
-    async logoutAll(@CurrentUser('id') userId: string): Promise<MessageResponse> {
+    async logoutAll(
+        @CurrentUser('id') userId: string,
+    ): Promise<MessageResponse> {
         await this.authService.logoutAll(userId);
         return { message: 'Logged out from all sessions' };
     }
@@ -196,7 +209,7 @@ export class AuthController {
     ) {
         const isValid = this.twoFactorService.verifyCode(
             twoFactorAuthDto.twoFactorCode,
-            user.twoFactorSecret
+            user.twoFactorSecret,
         );
 
         if (!isValid) {
@@ -235,7 +248,7 @@ export class AuthController {
     ) {
         const isValid = await this.twoFactorService.validateRecoveryCode(
             userId,
-            recoveryCodeDto.recoveryCode
+            recoveryCodeDto.recoveryCode,
         );
 
         if (!isValid) {
@@ -285,7 +298,7 @@ export class AuthController {
     ) {
         const isValid = this.twoFactorService.verifyCode(
             verifyTwoFactorDto.code,
-            verifyTwoFactorDto.secret
+            verifyTwoFactorDto.secret,
         );
 
         if (!isValid) {
@@ -294,7 +307,7 @@ export class AuthController {
 
         const recoveryCodes = await this.twoFactorService.enable(
             userId,
-            verifyTwoFactorDto.secret
+            verifyTwoFactorDto.secret,
         );
 
         return { recoveryCodes };
@@ -314,7 +327,7 @@ export class AuthController {
         const user = await this.usersService.findById(userId);
         const isPasswordValid = await this.authService.validateCredentials(
             user.email,
-            password
+            password,
         );
 
         if (!isPasswordValid) {
@@ -339,14 +352,15 @@ export class AuthController {
         const user = await this.usersService.findById(userId);
         const isPasswordValid = await this.authService.validateCredentials(
             user.email,
-            password
+            password,
         );
 
         if (!isPasswordValid) {
             throw new UnauthorizedException('Invalid password');
         }
 
-        const recoveryCodes = await this.twoFactorService.regenerateRecoveryCodes(userId);
+        const recoveryCodes =
+            await this.twoFactorService.regenerateRecoveryCodes(userId);
         return { recoveryCodes };
     }
 
@@ -361,7 +375,10 @@ export class AuthController {
         @Body() forgotPasswordDto: ForgotPasswordDto,
     ): Promise<MessageResponse> {
         await this.passwordService.forgotPassword(forgotPasswordDto.email);
-        return { message: 'If your email is registered, you will receive a reset link.' };
+        return {
+            message:
+                'If your email is registered, you will receive a reset link.',
+        };
     }
 
     @Public()
@@ -379,7 +396,7 @@ export class AuthController {
 
         await this.passwordService.resetPassword(
             resetPasswordDto.token,
-            resetPasswordDto.password
+            resetPasswordDto.password,
         );
 
         return { message: 'Password reset successfully' };
@@ -396,14 +413,17 @@ export class AuthController {
         @Body() changePasswordDto: ChangePasswordDto,
         @CurrentUser('id') userId: string,
     ): Promise<MessageResponse> {
-        if (changePasswordDto.newPassword !== changePasswordDto.newPasswordConfirm) {
+        if (
+            changePasswordDto.newPassword !==
+            changePasswordDto.newPasswordConfirm
+        ) {
             throw new BadRequestException('New passwords do not match');
         }
 
         await this.passwordService.changePassword(
             userId,
             changePasswordDto.currentPassword,
-            changePasswordDto.newPassword
+            changePasswordDto.newPassword,
         );
 
         return { message: 'Password changed successfully' };
@@ -426,9 +446,14 @@ export class AuthController {
     @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
     @Post('users/:id/deactivate')
     @ApiOperation({ summary: 'Deactivate user account (Admin)' })
-    @ApiResponse({ status: 200, description: 'Account deactivated successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Account deactivated successfully',
+    })
     @ApiBearerAuth('access-token')
-    async deactivateUser(@Param('id') userId: string): Promise<MessageResponse> {
+    async deactivateUser(
+        @Param('id') userId: string,
+    ): Promise<MessageResponse> {
         await this.usersService.update(userId, { isActive: false });
         return { message: 'User account deactivated successfully' };
     }
@@ -442,7 +467,8 @@ export class AuthController {
     async unlockUser(
         @Param('id') userId: string,
         // Utilisation du TOKEN d'injection ici aussi
-        @Inject(INJECTION_TOKENS.ACCOUNT_LOCK_SERVICE) accountLockService: IAccountLockService,
+        @Inject(INJECTION_TOKENS.ACCOUNT_LOCK_SERVICE)
+        accountLockService: IAccountLockService,
     ): Promise<MessageResponse> {
         await accountLockService.unlockAccount(userId);
         return { message: 'User account unlocked successfully' };
@@ -471,5 +497,65 @@ export class AuthController {
     ): Promise<MessageResponse> {
         // This would need to be implemented in a session service
         return { message: 'Feature not yet implemented' };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('password-expiry-status')
+    @ApiOperation({ summary: 'Check password expiry status' })
+    @ApiResponse({ status: 200, description: 'Password expiry status' })
+    @ApiBearerAuth('access-token')
+    async checkPasswordExpiry(@CurrentUser('id') userId: string) {
+        const expiryStatus =
+            await this.passwordExpiryService.isPasswordExpired(userId);
+        return {
+            expired: expiryStatus.expired,
+            expiresAt: expiryStatus.expiresAt,
+            daysUntilExpiry: expiryStatus.daysUntilExpiry,
+            requiresChange: expiryStatus.expired,
+        };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('change-expired-password')
+    @SkipPasswordExpiry() // Permet l'accès même si le mot de passe est expiré
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Change expired password' })
+    @ApiResponse({ status: 200, description: 'Password changed successfully' })
+    @ApiBearerAuth('access-token')
+    async changeExpiredPassword(
+        @Body() changePasswordDto: ChangePasswordDto,
+        @CurrentUser('id') userId: string,
+    ): Promise<MessageResponse> {
+        if (
+            changePasswordDto.newPassword !==
+            changePasswordDto.newPasswordConfirm
+        ) {
+            throw new BadRequestException('New passwords do not match');
+        }
+
+        await this.passwordService.changePassword(
+            userId,
+            changePasswordDto.currentPassword,
+            changePasswordDto.newPassword,
+        );
+
+        // Mettre à jour l'expiration du mot de passe
+        await this.passwordExpiryService.updatePasswordExpiry(userId);
+
+        return { message: 'Password changed successfully' };
+    }
+
+    // Pour les admins : forcer le changement de mot de passe
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+    @Post('users/:id/force-password-change')
+    @ApiOperation({ summary: 'Force user to change password (Admin)' })
+    @ApiResponse({ status: 200, description: 'Password change forced' })
+    @ApiBearerAuth('access-token')
+    async forcePasswordChange(
+        @Param('id') userId: string,
+    ): Promise<MessageResponse> {
+        await this.passwordExpiryService.forcePasswordChange(userId);
+        return { message: 'User must change password on next login' };
     }
 }

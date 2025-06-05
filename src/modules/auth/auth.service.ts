@@ -133,7 +133,6 @@ export class AuthService {
 
             await this.usersService.resetLoginAttempts(user.id);
 
-            // ✅ ANALYSE D'ANOMALIES AVEC TYPE EXPLICITE
             let securityAlerts: SecurityAlert[] = [];
             if (ipAddress && userAgent) {
                 try {

@@ -48,12 +48,18 @@ model User {
   twoFactorSecret        String? @map("two_factor_secret")
   twoFactorRecoveryCodes String? @map("two_factor_recovery_codes")
 
+  // Gestion de l'expiration du mot de passe
+  passwordChangedAt         DateTime  @default(now()) @map("password_changed_at")
+  passwordExpiresAt         DateTime? @map("password_expires_at")
+  lastPasswordExpiryWarning DateTime? @map("last_password_expiry_warning")
+  forcePasswordChange       Boolean   @default(false) @map("force_password_change")
+
   // Tokens pour la vérification et la réinitialisation
   verificationToken  VerificationToken?
   passwordResetToken PasswordResetToken?
   refreshToken       RefreshToken?
 
-  @@index([email])
+  @@index([email, passwordExpiresAt])
   @@map("users")
 }
 

@@ -11,11 +11,11 @@ import { INJECTION_TOKENS } from '../constants/injection-tokens';
 export interface SecurityAlert {
     userId: string;
     type:
-    | 'SUSPICIOUS_LOGIN'
-    | 'MULTIPLE_SESSIONS'
-    | 'LOCATION_CHANGE'
-    | 'UNUSUAL_ACTIVITY'
-    | 'BRUTE_FORCE';
+        | 'SUSPICIOUS_LOGIN'
+        | 'MULTIPLE_SESSIONS'
+        | 'LOCATION_CHANGE'
+        | 'UNUSUAL_ACTIVITY'
+        | 'BRUTE_FORCE';
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     details: Record<string, any>;
     timestamp: Date;
@@ -229,9 +229,9 @@ export class AnomalyDetectionService {
             // ✅ CORRECTION: Assurer que isNewLocation est toujours boolean
             const isNewLocation = Boolean(
                 this.securityConfig.geoTrackingEnabled &&
-                currentGeo &&
-                knownCountries.size > 0 &&
-                !knownCountries.has(currentGeo.country),
+                    currentGeo &&
+                    knownCountries.size > 0 &&
+                    !knownCountries.has(currentGeo.country),
             );
 
             const knownDevices = new Set<string>();
@@ -281,7 +281,7 @@ export class AnomalyDetectionService {
             const averageSessionDuration =
                 sessionDurations.length > 0
                     ? sessionDurations.reduce((a, b) => a + b, 0) /
-                    sessionDurations.length
+                      sessionDurations.length
                     : 0;
 
             const recentLoginAttempts = await this.prisma.user.findUnique({
@@ -422,7 +422,7 @@ export class AnomalyDetectionService {
             ) {
                 const severity =
                     metrics.activeSessionCount >
-                        this.securityConfig.maxConcurrentSessions * 1.5
+                    this.securityConfig.maxConcurrentSessions * 1.5
                         ? 'HIGH'
                         : 'MEDIUM';
 

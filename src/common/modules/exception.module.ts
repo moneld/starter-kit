@@ -8,32 +8,32 @@ import { PrismaExceptionHandler } from '../exceptions/handlers/prisma-exception.
 import { GlobalExceptionFilter } from '../filters/global-exception.filter';
 
 const exceptionProviders = [
-  ExceptionHandlerRegistry,
-  HttpExceptionHandler,
-  JwtExceptionHandler,
-  PrismaExceptionHandler,
-  DefaultExceptionHandler,
-  {
-    provide: APP_FILTER,
-    useClass: GlobalExceptionFilter,
-  },
+    ExceptionHandlerRegistry,
+    HttpExceptionHandler,
+    JwtExceptionHandler,
+    PrismaExceptionHandler,
+    DefaultExceptionHandler,
+    {
+        provide: APP_FILTER,
+        useClass: GlobalExceptionFilter,
+    },
 ];
 
 @Global()
 @Module({
-  providers: exceptionProviders,
-  exports: [ExceptionHandlerRegistry],
+    providers: exceptionProviders,
+    exports: [ExceptionHandlerRegistry],
 })
 export class ExceptionModule {
-  constructor(
-    private readonly registry: ExceptionHandlerRegistry,
-    private readonly httpHandler: HttpExceptionHandler,
-    private readonly jwtHandler: JwtExceptionHandler,
-    private readonly prismaHandler: PrismaExceptionHandler,
-  ) {
-    // Register all exception handlers
-    this.registry.register(this.httpHandler);
-    this.registry.register(this.jwtHandler);
-    this.registry.register(this.prismaHandler);
-  }
+    constructor(
+        private readonly registry: ExceptionHandlerRegistry,
+        private readonly httpHandler: HttpExceptionHandler,
+        private readonly jwtHandler: JwtExceptionHandler,
+        private readonly prismaHandler: PrismaExceptionHandler,
+    ) {
+        // Register all exception handlers
+        this.registry.register(this.httpHandler);
+        this.registry.register(this.jwtHandler);
+        this.registry.register(this.prismaHandler);
+    }
 }

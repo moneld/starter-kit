@@ -50,4 +50,13 @@ export const securityConfig = registerAs('security', () => ({
         sessionAutoRevokeEnabled: process.env.SESSION_AUTO_REVOKE_ENABLED,
         sessionGeoTrackingEnabled: process.env.SESSION_GEO_TRACKING_ENABLED,
     },
+
+    passwordExpiry: {
+        enabled: process.env.PASSWORD_EXPIRY_CHECK_ENABLED === 'true',
+        expiryDays: parseInt(process.env.PASSWORD_EXPIRY_DAYS || '180', 10),
+        warningDays: parseInt(
+            process.env.PASSWORD_EXPIRY_WARNING_DAYS || '14',
+            10,
+        ),
+    },
 }));

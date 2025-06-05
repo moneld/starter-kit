@@ -11,7 +11,7 @@ export class AuthEventsService {
     constructor(
         @Inject(INJECTION_TOKENS.EMAIL_SERVICE)
         private readonly emailService: IEmailService,
-    ) { }
+    ) {}
 
     /**
      * Gère l'événement d'inscription utilisateur

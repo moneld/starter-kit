@@ -41,9 +41,8 @@ import { UsersModule } from './modules/users/users.module';
         PrismaModule,
         UsersModule,
         AuthModule,
-
     ],
     controllers: [],
     providers: [],
 })
-export class AppModule { }
+export class AppModule {}

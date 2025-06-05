@@ -16,9 +16,6 @@ const mailProviders = [
 
 @Module({
     providers: mailProviders,
-    exports: [
-        INJECTION_TOKENS.EMAIL_SERVICE,
-        INJECTION_TOKENS.EMAIL_PROVIDER,
-    ],
+    exports: [INJECTION_TOKENS.EMAIL_SERVICE, INJECTION_TOKENS.EMAIL_PROVIDER],
 })
-export class MailModule { }
+export class MailModule {}

@@ -28,4 +28,4 @@ const userProviders = [
         INJECTION_TOKENS.ACCOUNT_LOCK_SERVICE,
     ],
 })
-export class UsersModule { }
+export class UsersModule {}

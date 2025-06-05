@@ -14,49 +14,45 @@ import { HashingService } from '../services/hashing.service';
 import { KeyRotationService } from '../services/key-rotation.service';
 
 const securityProviders = [
-  CryptoService,
-  KeyRotationService,
-  AnomalyDetectionService,
-  SecurityAnalyzerRegistry,
-  LocationAnalyzer,
-  SessionAnalyzer,
-  DeviceAnalyzer,
-  {
-    provide: INJECTION_TOKENS.ENCRYPTION_SERVICE,
-    useClass: EncryptionAdapter,
-  },
-  {
-    provide: INJECTION_TOKENS.HASHING_SERVICE,
-    useClass: HashingService,
-  },
+    CryptoService,
+    KeyRotationService,
+    AnomalyDetectionService,
+    SecurityAnalyzerRegistry,
+    LocationAnalyzer,
+    SessionAnalyzer,
+    DeviceAnalyzer,
+    {
+        provide: INJECTION_TOKENS.ENCRYPTION_SERVICE,
+        useClass: EncryptionAdapter,
+    },
+    {
+        provide: INJECTION_TOKENS.HASHING_SERVICE,
+        useClass: HashingService,
+    },
 ];
 
 @Global()
 @Module({
-  imports: [
-    ConfigModule,
-    PrismaModule,
-    MailModule,
-  ],
-  providers: securityProviders,
-  exports: [
-    INJECTION_TOKENS.ENCRYPTION_SERVICE,
-    INJECTION_TOKENS.HASHING_SERVICE,
-    AnomalyDetectionService,
-    SecurityAnalyzerRegistry,
-    CryptoService
-  ],
+    imports: [ConfigModule, PrismaModule, MailModule],
+    providers: securityProviders,
+    exports: [
+        INJECTION_TOKENS.ENCRYPTION_SERVICE,
+        INJECTION_TOKENS.HASHING_SERVICE,
+        AnomalyDetectionService,
+        SecurityAnalyzerRegistry,
+        CryptoService,
+    ],
 })
 export class SecurityModule {
-  constructor(
-    private readonly registry: SecurityAnalyzerRegistry,
-    private readonly locationAnalyzer: LocationAnalyzer,
-    private readonly sessionAnalyzer: SessionAnalyzer,
-    private readonly deviceAnalyzer: DeviceAnalyzer,
-  ) {
-    // Register all analyzers
-    this.registry.register(this.locationAnalyzer);
-    this.registry.register(this.sessionAnalyzer);
-    this.registry.register(this.deviceAnalyzer);
-  }
+    constructor(
+        private readonly registry: SecurityAnalyzerRegistry,
+        private readonly locationAnalyzer: LocationAnalyzer,
+        private readonly sessionAnalyzer: SessionAnalyzer,
+        private readonly deviceAnalyzer: DeviceAnalyzer,
+    ) {
+        // Register all analyzers
+        this.registry.register(this.locationAnalyzer);
+        this.registry.register(this.sessionAnalyzer);
+        this.registry.register(this.deviceAnalyzer);
+    }
 }

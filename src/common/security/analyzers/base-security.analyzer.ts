@@ -1,37 +1,37 @@
 import { Logger } from '@nestjs/common';
 import {
-  ISecurityAnalyzer,
-  SecurityAlert,
-  SecurityContext,
+    ISecurityAnalyzer,
+    SecurityAlert,
+    SecurityContext,
 } from '../../interfaces/security-analyzer.interface';
 
 export abstract class BaseSecurityAnalyzer implements ISecurityAnalyzer {
-  protected readonly logger: Logger;
+    protected readonly logger: Logger;
 
-  constructor(protected readonly name: string) {
-    this.logger = new Logger(this.constructor.name);
-  }
+    constructor(protected readonly name: string) {
+        this.logger = new Logger(this.constructor.name);
+    }
 
-  abstract analyze(context: SecurityContext): Promise<SecurityAlert[]>;
+    abstract analyze(context: SecurityContext): Promise<SecurityAlert[]>;
 
-  getName(): string {
-    return this.name;
-  }
+    getName(): string {
+        return this.name;
+    }
 
-  abstract getPriority(): number;
+    abstract getPriority(): number;
 
-  protected createAlert(
-    type: string,
-    severity: SecurityAlert['severity'],
-    message: string,
-    details: any,
-  ): SecurityAlert {
-    return {
-      type,
-      severity,
-      message,
-      details,
-      timestamp: new Date(),
-    };
-  }
+    protected createAlert(
+        type: string,
+        severity: SecurityAlert['severity'],
+        message: string,
+        details: any,
+    ): SecurityAlert {
+        return {
+            type,
+            severity,
+            message,
+            details,
+            timestamp: new Date(),
+        };
+    }
 }

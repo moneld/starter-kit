@@ -7,6 +7,18 @@ export interface AuthTokens {
 
 export interface LoginResponse extends AuthTokens {
     requiresTwoFactor?: boolean;
+    requiresPasswordChange?: boolean; // Nouveau
+    passwordExpiryInfo?: {
+        // Nouveau
+        expired: boolean;
+        message: string;
+    };
+    passwordExpiryWarning?: {
+        // Nouveau
+        daysRemaining: number;
+        expiresAt: Date;
+        message: string;
+    };
     securityAlerts?: SecurityAlert[];
     user: {
         id: string;
