@@ -1,8 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import { PrismaService } from '../../modules/prisma/prisma.service';
 import { addMonths } from 'date-fns';
+import { PrismaService } from '../../modules/prisma/prisma.service';
 
 @Injectable()
 export class CryptoService implements OnModuleInit {
@@ -174,7 +174,7 @@ export class CryptoService implements OnModuleInit {
 
             // Optionnel: Re-chiffrer les données existantes avec la nouvelle clé
             // Cette étape est complexe et nécessite un traitement par lots
-            await this.rechiffrementDonneesSensibles();
+            await this.reencryptSensitiveData();
 
             this.logger.log('Rotation des clés terminée avec succès');
         } catch (error) {
@@ -189,7 +189,7 @@ export class CryptoService implements OnModuleInit {
      * Rechiffre toutes les données sensibles avec la nouvelle clé
      * Note: Cette méthode doit être implémentée selon la structure spécifique de vos données
      */
-    private async rechiffrementDonneesSensibles(): Promise<void> {
+    private async reencryptSensitiveData(): Promise<void> {
         try {
             // Exemple: Re-chiffrer les secrets 2FA
             const users = await this.prisma.user.findMany({
