@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { INJECTION_TOKENS } from '../../common/constants/injection-tokens';
 import { EmailAdapter } from './adapters/email.adapter';
 import { MailService } from './mail.service';
+import { TemplateService } from './services/template.service';
 
 const mailProviders = [
+    TemplateService,
     {
         provide: INJECTION_TOKENS.EMAIL_PROVIDER,
         useClass: MailService,

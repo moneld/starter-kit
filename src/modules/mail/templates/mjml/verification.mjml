@@ -1,0 +1,143 @@
+<mjml>
+    <mj-head>
+        <mj-title>Verify Your Email Address</mj-title>
+        <mj-preview
+            >Complete your registration by verifying your email
+            address</mj-preview
+        >
+        <mj-attributes>
+            <mj-all
+                font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+            />
+            <mj-text font-size="16px" color="#374151" line-height="1.6" />
+            <mj-button
+                background-color="#3B82F6"
+                border-radius="8px"
+                font-size="16px"
+                font-weight="600"
+            />
+        </mj-attributes>
+        <mj-style inline="inline">
+            .header-logo { max-width: 180px; } .verification-icon { width: 80px;
+            height: 80px; margin: 0 auto 20px; } .button-primary { background:
+            linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); box-shadow: 0 4px
+            14px 0 rgba(59, 130, 246, 0.3); } .footer-text { font-size: 14px;
+            color: #6B7280; }
+        </mj-style>
+    </mj-head>
+    <mj-body background-color="#F9FAFB">
+        <!-- Header -->
+        <mj-section background-color="#ffffff" padding="20px 0">
+            <mj-column>
+                <mj-image
+                    src="{{absoluteUrl '/images/logo.png'}}"
+                    alt="{{appName}}"
+                    css-class="header-logo"
+                    align="center"
+                />
+            </mj-column>
+        </mj-section>
+
+        <!-- Main Content -->
+        <mj-section background-color="#ffffff" padding="40px 20px 60px">
+            <mj-column>
+                <!-- Verification Icon -->
+                <mj-image
+                    src="{{absoluteUrl '/images/email-verification.png'}}"
+                    alt="Email Verification"
+                    css-class="verification-icon"
+                    align="center"
+                />
+
+                <!-- Greeting -->
+                <mj-text
+                    align="center"
+                    font-size="28px"
+                    font-weight="700"
+                    color="#111827"
+                    padding-bottom="20px"
+                >
+                    Welcome{{#if userName}}, {{capitalize userName}}{{/if}}!
+                </mj-text>
+
+                <!-- Main Message -->
+                <mj-text
+                    align="center"
+                    font-size="18px"
+                    color="#374151"
+                    padding-bottom="30px"
+                >
+                    Thank you for signing up with {{appName}}. To complete your
+                    registration and activate your account, please verify your
+                    email address.
+                </mj-text>
+
+                <!-- CTA Button -->
+                <mj-button
+                    href="{{verificationUrl}}"
+                    css-class="button-primary"
+                    padding="30px 0"
+                    inner-padding="16px 32px"
+                >
+                    Verify Email Address
+                </mj-button>
+
+                <!-- Alternative Link -->
+                <mj-text
+                    align="center"
+                    font-size="14px"
+                    color="#6B7280"
+                    padding-top="20px"
+                >
+                    If the button doesn't work, copy and paste this link into
+                    your browser:
+                </mj-text>
+                <mj-text align="center" font-size="14px" padding-top="10px">
+                    <a
+                        href="{{verificationUrl}}"
+                        style="color: #3b82f6; word-break: break-all"
+                        >{{verificationUrl}}</a
+                    >
+                </mj-text>
+
+                <!-- Expiration Notice -->
+                <mj-divider
+                    border-color="#E5E7EB"
+                    border-width="1px"
+                    padding="30px 0 20px"
+                />
+                <mj-text align="center" font-size="14px" color="#9CA3AF">
+                    This verification link will expire in 24 hours for security
+                    reasons.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+
+        <!-- Footer -->
+        <mj-section background-color="#F3F4F6" padding="30px 20px">
+            <mj-column>
+                <mj-text align="center" css-class="footer-text">
+                    © {{currentYear}} {{appName}}. All rights reserved.
+                </mj-text>
+                <mj-text
+                    align="center"
+                    css-class="footer-text"
+                    padding-top="10px"
+                >
+                    If you didn't create an account with us, you can safely
+                    ignore this email.
+                </mj-text>
+                <mj-text
+                    align="center"
+                    css-class="footer-text"
+                    padding-top="15px"
+                >
+                    Questions? Contact us at
+                    <a href="mailto:{{supportEmail}}" style="color: #3b82f6"
+                        >{{supportEmail}}</a
+                    >
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

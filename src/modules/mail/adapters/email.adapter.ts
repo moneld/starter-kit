@@ -31,16 +31,14 @@ export class EmailAdapter implements IEmailService {
         token: string,
         userName?: string,
     ): Promise<boolean> {
-        const verificationUrl = `${this.frontendUrl}/auth/verify-email?token=${token}`;
-
         return this.emailProvider.sendMail({
             to: email,
             subject: `Email Verification - ${this.appName}`,
             template: 'verification',
             context: {
                 userName,
-                verificationUrl,
-                appName: this.appName,
+                verificationToken: token,
+                verificationUrl: `${this.frontendUrl}/auth/verify-email?token=${token}`,
             },
         });
     }
@@ -50,16 +48,14 @@ export class EmailAdapter implements IEmailService {
         token: string,
         userName?: string,
     ): Promise<boolean> {
-        const resetUrl = `${this.frontendUrl}/auth/reset-password?token=${token}`;
-
         return this.emailProvider.sendMail({
             to: email,
             subject: `Password Reset - ${this.appName}`,
             template: 'password-reset',
             context: {
                 userName,
-                resetUrl,
-                appName: this.appName,
+                resetToken: token,
+                resetUrl: `${this.frontendUrl}/auth/reset-password?token=${token}`,
             },
         });
     }
@@ -71,7 +67,6 @@ export class EmailAdapter implements IEmailService {
             template: 'welcome',
             context: {
                 userName,
-                appName: this.appName,
                 loginUrl: `${this.frontendUrl}/auth/login`,
             },
         });
@@ -84,7 +79,28 @@ export class EmailAdapter implements IEmailService {
             template: 'security-alert',
             context: {
                 alert,
-                appName: this.appName,
+                alertType: alert.type,
+                alertSeverity: alert.severity,
+                alertMessage: alert.message,
+                alertDetails: alert.details,
+                alertTimestamp: alert.timestamp,
+            },
+        });
+    }
+
+    async sendPasswordExpiryWarning(
+        email: string,
+        userName?: string,
+        daysUntilExpiry?: number,
+    ): Promise<boolean> {
+        return this.emailProvider.sendMail({
+            to: email,
+            subject: `Password Expiry Warning - ${this.appName}`,
+            template: 'password-expiry-warning',
+            context: {
+                userName,
+                daysUntilExpiry,
+                changePasswordUrl: `${this.frontendUrl}/auth/change-password`,
             },
         });
     }

@@ -1,3 +1,5 @@
+import { TemplateContext } from '../services/template.service';
+
 export interface IEmailProvider {
     sendMail(options: {
         to: string;
@@ -5,7 +7,7 @@ export interface IEmailProvider {
         text?: string;
         html?: string;
         template?: string;
-        context?: any;
+        context?: TemplateContext;
     }): Promise<boolean>;
 }
 
@@ -22,4 +24,9 @@ export interface IEmailService {
     ): Promise<boolean>;
     sendWelcomeEmail(email: string, userName?: string): Promise<boolean>;
     sendSecurityAlert(email: string, alert: any): Promise<boolean>;
+    sendPasswordExpiryWarning(
+        email: string,
+        userName?: string,
+        daysUntilExpiry?: number,
+    ): Promise<boolean>;
 }
