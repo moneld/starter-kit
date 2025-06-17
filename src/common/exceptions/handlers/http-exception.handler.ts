@@ -31,6 +31,6 @@ export class HttpExceptionHandler extends BaseExceptionHandler {
     }
 
     getPriority(): number {
-        return 1; // Higher priority for HTTP exceptions
+        return 1;
     }
 }

@@ -7,7 +7,7 @@ export class ExceptionHandlerRegistry {
 
     register(handler: IExceptionHandler): void {
         this.handlers.push(handler);
-        // Sort by priority (lower number = higher priority)
+
         this.handlers.sort((a, b) => a.getPriority() - b.getPriority());
     }
 

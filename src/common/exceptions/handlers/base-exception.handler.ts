@@ -32,7 +32,6 @@ export abstract class BaseExceptionHandler implements IExceptionHandler {
         isProduction: boolean,
     ): string {
         if (isProduction) {
-            // Sanitize sensitive information in production
             const sensitivePatterns = [
                 /password/i,
                 /token/i,

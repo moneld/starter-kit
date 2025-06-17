@@ -4,7 +4,7 @@ import { BaseExceptionHandler } from './base-exception.handler';
 
 export class DefaultExceptionHandler extends BaseExceptionHandler {
     canHandle(exception: any): boolean {
-        return true; // Handles all exceptions not handled by other handlers
+        return true;
     }
 
     handle(exception: any, context: any): ErrorResponse {
@@ -24,6 +24,6 @@ export class DefaultExceptionHandler extends BaseExceptionHandler {
     }
 
     getPriority(): number {
-        return 999; // Lowest priority - catch all
+        return 999;
     }
 }
