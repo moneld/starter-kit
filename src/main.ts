@@ -7,10 +7,10 @@ import {
     NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AuthExceptionsFilter } from './modules/auth/filters/auth-exceptions.filter';
 import { SecurityHeadersInterceptor } from './modules/auth/interceptors/security-headers.interceptor';
-import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
     // Créer l'application avec Fastify
