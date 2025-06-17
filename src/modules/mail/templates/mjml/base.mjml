@@ -1,86 +1,84 @@
 <mjml>
-    <mj-head>
-        <mj-title>{{subject}}</mj-title>
-        <mj-preview>{{preview}}</mj-preview>
-        <mj-font
-            name="Inter"
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-        />
-        <mj-attributes>
-            <mj-all
-                font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-            />
-            <mj-text font-size="16px" color="#1F2937" line-height="1.65" />
-            <mj-section background-color="#ffffff" />
-            <mj-button
-                font-weight="600"
-                border-radius="12px"
-                font-size="16px"
-            />
-        </mj-attributes>
-        <mj-style inline="inline">
-            .header-logo { max-width: 140px; height: auto; } .footer-text {
-            font-size: 14px; color: #6B7280; line-height: 1.5; } .footer-link {
-            color: #4F46E5; text-decoration: none; font-weight: 500; }
-            .footer-link:hover { color: #3730A3; } .content-wrapper {
-            background: #ffffff; border-radius: 16px; box-shadow: 0 1px 3px 0
-            rgba(0, 0, 0, 0.1); overflow: hidden; } .divider { height: 1px;
-            background: linear-gradient(90deg, transparent, #E5E7EB 50%,
-            transparent); margin: 32px 0; }
-        </mj-style>
-    </mj-head>
-
-    <mj-body background-color="#F8FAFC">
-        <!-- Spacer -->
-        <mj-section background-color="transparent" padding="24px 0 0 0">
-            <mj-column></mj-column>
-        </mj-section>
-
-        <!-- Header avec logo -->
-        <mj-section background-color="transparent" padding="0 20px 32px 20px">
+    <mj-body>
+        <mj-section>
             <mj-column>
-                <mj-image
-                    src="{{absoluteUrl '/images/logo.png'}}"
-                    alt="{{appName}}"
-                    css-class="header-logo"
-                    align="center"
-                />
-            </mj-column>
-        </mj-section>
-
-        <!-- Container principal avec ombre -->
-        <mj-wrapper css-class="content-wrapper" padding="0">
-            <!-- Contenu principal -->
-            <mj-section background-color="#ffffff" padding="48px 32px">
-                <mj-column> {{> content}} </mj-column>
-            </mj-section>
-        </mj-wrapper>
-
-        <!-- Séparateur visuel -->
-        <mj-section background-color="transparent" padding="0 20px">
-            <mj-column>
-                <mj-raw>
-                    <div class="divider"></div>
-                </mj-raw>
-            </mj-column>
-        </mj-section>
-
-        <!-- Footer moderne -->
-        <mj-section background-color="transparent" padding="0 20px 40px 20px">
-            <mj-column>
-                <mj-text
-                    align="center"
-                    css-class="footer-text"
-                    padding-bottom="12px"
+                <mj-text font-size="20px" color="#03519E" align="center"
+                    >${process.env.APP_NAME}</mj-text
                 >
-                    © {{currentYear}} {{appName}}. Tous droits réservés.
-                </mj-text>
-                <mj-text align="center" css-class="footer-text">
-                    Des questions ? Contactez-nous à
-                    <a href="mailto:{{supportEmail}}" class="footer-link"
-                        >{{supportEmail}}</a
-                    >
-                </mj-text>
+                <mj-divider border-color="#03519E"></mj-divider>
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    >Bonjour ${variables.username},</mj-text
+                >
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    >Nous sommes heureux de vous informer que vous avez été
+                    ajouté à la plateforme <b>${process.env.APP_NAME}</b>. Afin
+                    de finaliser votre inscription, veuillez définir votre mot
+                    de passe en cliquant sur le bouton ci-dessous :</mj-text
+                >
+                <mj-button
+                    font-size="16px"
+                    href="${variables.link}"
+                    background-color="#03519E"
+                    color="#ffffff"
+                    font-family="Helvetica, Arial, sans-serif"
+                    padding="15px 30px"
+                    border-radius="5px"
+                    >Définir mon mot de passe</mj-button
+                >
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    >Si le bouton ne fonctionne pas, vous pouvez copier et
+                    coller le lien suivant dans votre navigateur :</mj-text
+                >
+                <mj-text
+                    font-size="16px"
+                    color="#1D70B8"
+                    font-family="Helvetica, Arial, sans-serif"
+                    ><a href="${variables.link}" style="color: #1d70b8"
+                        >${variables.link}</a
+                    ></mj-text
+                >
+                <mj-text
+                    font-size="16px"
+                    color="#FF0000"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    >⚠️ <b>Important :</b> Ce lien d'activation est valable
+                    pendant 1 heure. Si le lien expire, vous devrez demander un
+                    nouvel email d'activation.</mj-text
+                >
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    >Nous vous souhaitons une excellente expérience sur la
+                    plateforme ${process.env.APP_NAME} !</mj-text
+                >
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    >Cordialement, <br />
+                    L'équipe <b> ${process.env.APP_NAME}</b></mj-text
+                >
             </mj-column>
         </mj-section>
     </mj-body>
