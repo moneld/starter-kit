@@ -39,12 +39,10 @@
                 <!-- Niveau de sévérité -->
                 <mj-text
                     font-size="16px"
-                    background-color="{{#if_eq alertSeverity 'CRITICAL'}}#DC2626{{else}}{{#if_eq alertSeverity 'HIGH'}}#EA580C{{else}}{{#if_eq alertSeverity 'MEDIUM'}}#F59E0B{{else}}#3B82F6{{/if_eq}}{{/if_eq}}{{/if_eq}}"
                     font-family="Helvetica, Arial, sans-serif"
                     font-weight="bold"
                     align="center"
                     padding="10px 20px"
-                    border-radius="5px"
                 >
                     {{#if_eq alertSeverity 'CRITICAL'}} ⚠️ CRITIQUE - Action
                     immédiate requise {{else}} {{#if_eq alertSeverity 'HIGH'}}
@@ -76,7 +74,6 @@
                     line-height="26px"
                     background-color="#F9FAFB"
                     padding="15px"
-                    border-left="4px solid #03519E"
                 >
                     <b>Type d'alerte :</b> {{alertType}}<br />
                     <b>Message :</b> {{alertMessage}}<br />
