@@ -1,159 +1,210 @@
 <mjml>
-  <mj-head>
-    <mj-title>Security Alert - {{appName}}</mj-title>
-    <mj-preview>Important security notification about your account</mj-preview>
-    <mj-attributes>
-      <mj-all font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
-      <mj-text font-size="16px" color="#374151" line-height="1.6" />
-      <mj-button background-color="#DC2626" border-radius="8px" font-size="16px" font-weight="600" />
-    </mj-attributes>
-    <mj-style inline="inline">
-      .header-logo { max-width: 180px; }
-      .alert-icon { width: 80px; height: 80px; margin: 0 auto 20px; }
-      .button-urgent { 
-        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
-        box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.4);
-      }
-      .severity-critical { background-color: #FEE2E2; border-left: 4px solid #DC2626; }
-      .severity-high { background-color: #FED7AA; border-left: 4px solid #EA580C; }
-      .severity-medium { background-color: #FEF3C7; border-left: 4px solid #F59E0B; }
-      .severity-low { background-color: #DBEAFE; border-left: 4px solid #3B82F6; }
-      .alert-details { 
-        background-color: #F9FAFB; 
-        border-radius: 8px; 
-        padding: 20px; 
-        margin: 20px 0;
-      }
-      .footer-text { font-size: 14px; color: #6B7280; }
-    </mj-style>
-  </mj-head>
-  <mj-body background-color="#F9FAFB">
-    
-    <!-- Header -->
-    <mj-section background-color="#ffffff" padding="20px 0">
-      <mj-column>
-        <mj-image 
-          src="{{absoluteUrl '/images/logo.png'}}" 
-          alt="{{appName}}" 
-          css-class="header-logo"
-          align="center"
-        />
-      </mj-column>
-    </mj-section>
+    <mj-head>
+        <mj-title>🚨 Alerte de sécurité - {{appName}}</mj-title>
+        <mj-preview>Activité inhabituelle détectée sur votre compte</mj-preview>
+    </mj-head>
+    <mj-body background-color="#F8F9FA">
+        <mj-section background-color="#ffffff" padding="20px">
+            <mj-column>
+                <!-- Logo / Nom de l'application -->
+                <mj-text
+                    font-size="24px"
+                    color="#03519E"
+                    align="center"
+                    font-weight="bold"
+                    padding-bottom="10px"
+                >
+                    {{appName}}
+                </mj-text>
 
-    <!-- Main Content -->
-    <mj-section background-color="#ffffff" padding="40px 20px 60px">
-      <mj-column>
-        <!-- Alert Icon -->
-        <mj-image 
-          src="{{absoluteUrl '/images/security-alert.png'}}" 
-          alt="Security Alert"
-          css-class="alert-icon"
-          align="center"
-        />
-        
-        <!-- Alert Title -->
-        <mj-text align="center" font-size="28px" font-weight="700" color="#DC2626" padding-bottom="20px">
-          🚨 Security Alert
-        </mj-text>
-        
-        <!-- Alert Message -->
-        <mj-text align="center" font-size="18px" color="#374151" padding-bottom="30px">
-          We detected {{alertMessage}} on your {{appName}} account.
-        </mj-text>
-        
-        <!-- Severity Banner -->
-        <mj-text 
-          css-class="severity-{{alertSeverity}}" 
-          align="center" 
-          font-size="16px" 
-          font-weight="600" 
-          padding="16px"
-          style="border-radius: 8px;"
-        >
-          {{#if_eq alertSeverity 'CRITICAL'}}
-            ⚠️ CRITICAL ALERT - Immediate action required
-          {{else}}
-            {{#if_eq alertSeverity 'HIGH'}}
-              🔴 HIGH PRIORITY - Action recommended
-            {{else}}
-              {{#if_eq alertSeverity 'MEDIUM'}}
-                🟡 MEDIUM PRIORITY - Review recommended
-              {{else}}
-                🔵 LOW PRIORITY - For your information
-              {{/if_eq}}
-            {{/if_eq}}
-          {{/if_eq}}
-        </mj-text>
-        
-        <!-- Alert Details -->
-        <mj-text css-class="alert-details" font-size="14px">
-          <strong>Alert Details:</strong><br/><br/>
-          <strong>Type:</strong> {{alertType}}<br/>
-          <strong>Time:</strong> {{formatDate alertTimestamp}}<br/>
-          <strong>Message:</strong> {{alertMessage}}<br/><br/>
-          
-          {{#if alertDetails.newCountry}}
-            <strong>Location:</strong> {{alertDetails.newCountry}}{{#if alertDetails.newCity}}, {{alertDetails.newCity}}{{/if}}<br/>
-          {{/if}}
-          
-          {{#if alertDetails.ipAddress}}
-            <strong>IP Address:</strong> {{alertDetails.ipAddress}}<br/>
-          {{/if}}
-          
-          {{#if alertDetails.activeSessionCount}}
-            <strong>Active Sessions:</strong> {{alertDetails.activeSessionCount}}<br/>
-          {{/if}}
-          
-          {{#if alertDetails.deviceInfo}}
-            <strong>Device:</strong> {{alertDetails.deviceInfo.browser}} on {{alertDetails.deviceInfo.os}}<br/>
-          {{/if}}
-        </mj-text>
-        
-        <!-- Action Required -->
-        {{#if_eq alertSeverity 'CRITICAL'}}
-          <mj-text align="center" font-size="16px" color="#DC2626" font-weight="600" padding="20px 0">
-            If this wasn't you, secure your account immediately:
-          </mj-text>
-          
-          <mj-button 
-            href="{{absoluteUrl '/auth/change-password'}}"
-            css-class="button-urgent"
-            padding="20px 0"
-            inner-padding="16px 32px"
-          >
-            Change Password Now
-          </mj-button>
-        {{/if_eq}}
-        
-        <!-- Security Recommendations -->
-        <mj-divider border-color="#E5E7EB" border-width="1px" padding="30px 0 20px" />
-        <mj-text align="center" font-size="16px" font-weight="600" color="#111827" padding-bottom="15px">
-          Security Recommendations:
-        </mj-text>
-        
-        <mj-text font-size="14px" color="#374151">
-          • <strong>Change your password</strong> if you don't recognize this activity<br/>
-          • <strong>Enable two-factor authentication</strong> for additional security<br/>
-          • <strong>Review active sessions</strong> and revoke any suspicious ones<br/>
-          • <strong>Use a unique, strong password</strong> for your account<br/>
-          • <strong>Contact support</strong> if you need assistance securing your account
-        </mj:text>
-      </mj-column>
-    </mj-section>
+                <!-- Divider d'alerte -->
+                <mj-divider
+                    border-color="#DC2626"
+                    border-width="2px"
+                    padding="10px 0"
+                ></mj-divider>
 
-    <!-- Footer -->
-    <mj-section background-color="#F3F4F6" padding="30px 20px">
-      <mj-column>
-        <mj-text align="center" css-class="footer-text">
-          © {{currentYear}} {{appName}}. All rights reserved.
-        </mj-text>
-        <mj-text align="center" css-class="footer-text" padding-top="10px">
-          This is an automated security notification. If you need help, contact us at 
-          <a href="mailto:{{supportEmail}}" style="color: #3B82F6;">{{supportEmail}}</a>
-        </mj-text>
-      </mj-column>
-    </mj-section>
+                <!-- Titre d'alerte -->
+                <mj-text
+                    font-size="20px"
+                    color="#DC2626"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="bold"
+                    align="center"
+                    padding="20px 0 15px 0"
+                >
+                    🚨 ALERTE DE SÉCURITÉ
+                </mj-text>
 
-  </mj-body>
+                <!-- Niveau de sévérité -->
+                <mj-text
+                    font-size="16px"
+                    background-color="{{#if_eq alertSeverity 'CRITICAL'}}#DC2626{{else}}{{#if_eq alertSeverity 'HIGH'}}#EA580C{{else}}{{#if_eq alertSeverity 'MEDIUM'}}#F59E0B{{else}}#3B82F6{{/if_eq}}{{/if_eq}}{{/if_eq}}"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="bold"
+                    align="center"
+                    padding="10px 20px"
+                    border-radius="5px"
+                >
+                    {{#if_eq alertSeverity 'CRITICAL'}} ⚠️ CRITIQUE - Action
+                    immédiate requise {{else}} {{#if_eq alertSeverity 'HIGH'}}
+                    🔴 PRIORITÉ ÉLEVÉE - Action recommandée {{else}} {{#if_eq
+                    alertSeverity 'MEDIUM'}} 🟡 PRIORITÉ MOYENNE - Vérification
+                    recommandée {{else}} 🔵 PRIORITÉ FAIBLE - Information
+                    {{/if_eq}} {{/if_eq}} {{/if_eq}}
+                </mj-text>
+
+                <!-- Message principal -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="20px 0 10px 0"
+                >
+                    Nous avons détecté une activité inhabituelle sur votre
+                    compte <b>{{appName}}</b> :
+                </mj-text>
+
+                <!-- Détails de l'alerte -->
+                <mj-text
+                    font-size="16px"
+                    color="#333"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    background-color="#F9FAFB"
+                    padding="15px"
+                    border-left="4px solid #03519E"
+                >
+                    <b>Type d'alerte :</b> {{alertType}}<br />
+                    <b>Message :</b> {{alertMessage}}<br />
+                    <b>Date et heure :</b> {{formatDate alertTimestamp}}<br />
+                    {{#if alertDetails.newCountry}}<b>Localisation :</b>
+                    {{alertDetails.newCountry}}{{#if alertDetails.newCity}},
+                    {{alertDetails.newCity}}{{/if}}<br />{{/if}} {{#if
+                    alertDetails.ipAddress}}<b>Adresse IP :</b>
+                    {{alertDetails.ipAddress}}<br />{{/if}} {{#if
+                    alertDetails.deviceInfo}}<b>Appareil :</b>
+                    {{alertDetails.deviceInfo.browser}} sur
+                    {{alertDetails.deviceInfo.os}}{{/if}}
+                </mj-text>
+
+                <!-- Action requise -->
+                <mj-text
+                    font-size="16px"
+                    color="#DC2626"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="bold"
+                    padding="20px 0 10px 0"
+                >
+                    Si ce n'est pas vous, sécurisez votre compte immédiatement :
+                </mj-text>
+
+                <!-- Bouton CTA -->
+                <mj-button
+                    font-size="16px"
+                    href="{{absoluteUrl '/auth/change-password'}}"
+                    background-color="#DC2626"
+                    color="#ffffff"
+                    font-family="Helvetica, Arial, sans-serif"
+                    padding="15px 30px"
+                    border-radius="5px"
+                    align="center"
+                >
+                    Changer mon mot de passe
+                </mj-button>
+
+                <!-- Recommandations de sécurité -->
+                <mj-text
+                    font-size="16px"
+                    color="#03519E"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="bold"
+                    padding="30px 0 15px 0"
+                >
+                    Recommandations de sécurité :
+                </mj-text>
+
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0"
+                >
+                    • <b>Changez votre mot de passe</b> si vous ne reconnaissez
+                    pas cette activité<br />
+                    • <b>Activez l'authentification à deux facteurs</b> pour une
+                    sécurité renforcée<br />
+                    • <b>Vérifiez vos sessions actives</b> et révoquez les
+                    sessions suspectes<br />
+                    • <b>Utilisez un mot de passe unique et fort</b> pour votre
+                    compte<br />
+                    • <b>Contactez le support</b> si vous avez besoin d'aide
+                    pour sécuriser votre compte
+                </mj-text>
+
+                <!-- Message de fin -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="20px 0 10px 0"
+                >
+                    Cette alerte a été générée automatiquement pour protéger
+                    votre compte. Si l'activité vous semble normale, vous pouvez
+                    ignorer cet email.
+                </mj-text>
+
+                <!-- Signature -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0 20px 0"
+                >
+                    Cordialement,<br />
+                    L'équipe sécurité <b>{{appName}}</b>
+                </mj-text>
+
+                <!-- Footer -->
+                <mj-divider
+                    border-color="#E5E7EB"
+                    border-width="1px"
+                    padding="20px 0 10px 0"
+                ></mj-divider>
+
+                <mj-text
+                    font-size="12px"
+                    color="#9CA3AF"
+                    font-family="Helvetica, Arial, sans-serif"
+                    align="center"
+                    padding="10px 0"
+                >
+                    Ceci est une notification de sécurité automatisée. Pour
+                    toute assistance, contactez-nous à
+                    <a href="mailto:{{supportEmail}}" style="color: #03519e"
+                        >{{supportEmail}}</a
+                    >
+                </mj-text>
+
+                <mj-text
+                    font-size="12px"
+                    color="#9CA3AF"
+                    font-family="Helvetica, Arial, sans-serif"
+                    align="center"
+                    padding="5px 0"
+                >
+                    © {{currentYear}} {{appName}}. Tous droits réservés.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    </mj-body>
 </mjml>

@@ -1,141 +1,164 @@
 <mjml>
     <mj-head>
-        <mj-title>Verify Your Email Address</mj-title>
+        <mj-title>Vérification de votre adresse email</mj-title>
         <mj-preview
-            >Complete your registration by verifying your email
-            address</mj-preview
+            >Veuillez confirmer votre adresse email pour activer votre
+            compte</mj-preview
         >
-        <mj-attributes>
-            <mj-all
-                font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-            />
-            <mj-text font-size="16px" color="#374151" line-height="1.6" />
-            <mj-button
-                background-color="#3B82F6"
-                border-radius="8px"
-                font-size="16px"
-                font-weight="600"
-            />
-        </mj-attributes>
-        <mj-style inline="inline">
-            .header-logo { max-width: 180px; } .verification-icon { width: 80px;
-            height: 80px; margin: 0 auto 20px; } .button-primary { background:
-            linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); box-shadow: 0 4px
-            14px 0 rgba(59, 130, 246, 0.3); } .footer-text { font-size: 14px;
-            color: #6B7280; }
-        </mj-style>
     </mj-head>
-    <mj-body background-color="#F9FAFB">
-        <!-- Header -->
-        <mj-section background-color="#ffffff" padding="20px 0">
+    <mj-body background-color="#F8F9FA">
+        <mj-section background-color="#ffffff" padding="20px">
             <mj-column>
-                <mj-image
-                    src="{{absoluteUrl '/images/logo.png'}}"
-                    alt="{{appName}}"
-                    css-class="header-logo"
-                    align="center"
-                />
-            </mj-column>
-        </mj-section>
-
-        <!-- Main Content -->
-        <mj-section background-color="#ffffff" padding="40px 20px 60px">
-            <mj-column>
-                <!-- Verification Icon -->
-                <mj-image
-                    src="{{absoluteUrl '/images/email-verification.png'}}"
-                    alt="Email Verification"
-                    css-class="verification-icon"
-                    align="center"
-                />
-
-                <!-- Greeting -->
+                <!-- Logo / Nom de l'application -->
                 <mj-text
+                    font-size="24px"
+                    color="#03519E"
                     align="center"
-                    font-size="28px"
-                    font-weight="700"
-                    color="#111827"
-                    padding-bottom="20px"
+                    font-weight="bold"
+                    padding-bottom="10px"
                 >
-                    Welcome{{#if userName}}, {{capitalize userName}}{{/if}}!
+                    {{appName}}
                 </mj-text>
 
-                <!-- Main Message -->
+                <!-- Divider -->
+                <mj-divider
+                    border-color="#03519E"
+                    border-width="2px"
+                    padding="10px 0"
+                ></mj-divider>
+
+                <!-- Salutation -->
                 <mj-text
-                    align="center"
-                    font-size="18px"
-                    color="#374151"
-                    padding-bottom="30px"
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    padding="20px 0 10px 0"
                 >
-                    Thank you for signing up with {{appName}}. To complete your
-                    registration and activate your account, please verify your
-                    email address.
+                    Bonjour{{#if userName}} {{userName}}{{/if}},
                 </mj-text>
 
-                <!-- CTA Button -->
+                <!-- Message principal -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0"
+                >
+                    Nous sommes heureux de vous accueillir sur la plateforme
+                    <b>{{appName}}</b>. Afin de finaliser votre inscription et
+                    activer votre compte, veuillez vérifier votre adresse email
+                    en cliquant sur le bouton ci-dessous :
+                </mj-text>
+
+                <!-- Bouton CTA -->
                 <mj-button
+                    font-size="16px"
                     href="{{verificationUrl}}"
-                    css-class="button-primary"
-                    padding="30px 0"
-                    inner-padding="16px 32px"
+                    background-color="#03519E"
+                    color="#ffffff"
+                    font-family="Helvetica, Arial, sans-serif"
+                    padding="15px 30px"
+                    border-radius="5px"
+                    align="center"
                 >
-                    Verify Email Address
+                    Vérifier mon adresse email
                 </mj-button>
 
-                <!-- Alternative Link -->
+                <!-- Lien alternatif -->
                 <mj-text
-                    align="center"
-                    font-size="14px"
-                    color="#6B7280"
-                    padding-top="20px"
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="20px 0 10px 0"
                 >
-                    If the button doesn't work, copy and paste this link into
-                    your browser:
+                    Si le bouton ne fonctionne pas, vous pouvez copier et coller
+                    le lien suivant dans votre navigateur :
                 </mj-text>
-                <mj-text align="center" font-size="14px" padding-top="10px">
+
+                <mj-text
+                    font-size="14px"
+                    color="#1D70B8"
+                    font-family="Helvetica, Arial, sans-serif"
+                    padding="0 0 20px 0"
+                >
                     <a
                         href="{{verificationUrl}}"
-                        style="color: #3b82f6; word-break: break-all"
+                        style="color: #1d70b8; word-break: break-all"
                         >{{verificationUrl}}</a
                     >
                 </mj-text>
 
-                <!-- Expiration Notice -->
+                <!-- Avertissement -->
+                <mj-text
+                    font-size="16px"
+                    color="#FF0000"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0"
+                >
+                    ⚠️ <b>Important :</b> Ce lien de vérification est valable
+                    pendant 24 heures. Si le lien expire, vous devrez demander
+                    un nouvel email de vérification.
+                </mj-text>
+
+                <!-- Message de fin -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="20px 0 10px 0"
+                >
+                    Nous vous souhaitons une excellente expérience sur la
+                    plateforme {{appName}} !
+                </mj-text>
+
+                <!-- Signature -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0 20px 0"
+                >
+                    Cordialement,<br />
+                    L'équipe <b>{{appName}}</b>
+                </mj-text>
+
+                <!-- Footer -->
                 <mj-divider
                     border-color="#E5E7EB"
                     border-width="1px"
-                    padding="30px 0 20px"
-                />
-                <mj-text align="center" font-size="14px" color="#9CA3AF">
-                    This verification link will expire in 24 hours for security
-                    reasons.
-                </mj-text>
-            </mj-column>
-        </mj-section>
+                    padding="20px 0 10px 0"
+                ></mj-divider>
 
-        <!-- Footer -->
-        <mj-section background-color="#F3F4F6" padding="30px 20px">
-            <mj-column>
-                <mj-text align="center" css-class="footer-text">
-                    © {{currentYear}} {{appName}}. All rights reserved.
-                </mj-text>
                 <mj-text
+                    font-size="12px"
+                    color="#9CA3AF"
+                    font-family="Helvetica, Arial, sans-serif"
                     align="center"
-                    css-class="footer-text"
-                    padding-top="10px"
+                    padding="10px 0"
                 >
-                    If you didn't create an account with us, you can safely
-                    ignore this email.
+                    Si vous n'avez pas créé de compte sur {{appName}}, vous
+                    pouvez ignorer cet email en toute sécurité.
                 </mj-text>
+
                 <mj-text
+                    font-size="12px"
+                    color="#9CA3AF"
+                    font-family="Helvetica, Arial, sans-serif"
                     align="center"
-                    css-class="footer-text"
-                    padding-top="15px"
+                    padding="5px 0"
                 >
-                    Questions? Contact us at
-                    <a href="mailto:{{supportEmail}}" style="color: #3b82f6"
-                        >{{supportEmail}}</a
-                    >
+                    © {{currentYear}} {{appName}}. Tous droits réservés.
                 </mj-text>
             </mj-column>
         </mj-section>

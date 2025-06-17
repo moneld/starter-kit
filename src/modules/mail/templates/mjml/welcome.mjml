@@ -1,160 +1,160 @@
 <mjml>
     <mj-head>
-        <mj-title>Welcome to {{appName}}</mj-title>
-        <mj-preview>Your account is now active and ready to use</mj-preview>
-        <mj-attributes>
-            <mj-all
-                font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-            />
-            <mj-text font-size="16px" color="#374151" line-height="1.6" />
-            <mj-button
-                background-color="#10B981"
-                border-radius="8px"
-                font-size="16px"
-                font-weight="600"
-            />
-        </mj-attributes>
-        <mj-style inline="inline">
-            .header-logo { max-width: 180px; } .welcome-icon { width: 100px;
-            height: 100px; margin: 0 auto 20px; } .button-success { background:
-            linear-gradient(135deg, #10B981 0%, #059669 100%); box-shadow: 0 4px
-            14px 0 rgba(16, 185, 129, 0.3); } .feature-box { background-color:
-            #F9FAFB; border-radius: 8px; padding: 20px; margin: 10px 0; }
-            .footer-text { font-size: 14px; color: #6B7280; }
-        </mj-style>
+        <mj-title>Bienvenue sur {{appName}} !</mj-title>
+        <mj-preview
+            >Votre compte est maintenant actif et prêt à utiliser</mj-preview
+        >
     </mj-head>
-    <mj-body background-color="#F9FAFB">
-        <!-- Header -->
-        <mj-section background-color="#ffffff" padding="20px 0">
+    <mj-body background-color="#F8F9FA">
+        <mj-section background-color="#ffffff" padding="20px">
             <mj-column>
-                <mj-image
-                    src="{{absoluteUrl '/images/logo.png'}}"
-                    alt="{{appName}}"
-                    css-class="header-logo"
-                    align="center"
-                />
-            </mj-column>
-        </mj-section>
-
-        <!-- Main Content -->
-        <mj-section background-color="#ffffff" padding="40px 20px 60px">
-            <mj-column>
-                <!-- Welcome Icon -->
-                <mj-image
-                    src="{{absoluteUrl '/images/welcome-celebration.png'}}"
-                    alt="Welcome"
-                    css-class="welcome-icon"
-                    align="center"
-                />
-
-                <!-- Welcome Message -->
+                <!-- Logo / Nom de l'application -->
                 <mj-text
+                    font-size="24px"
+                    color="#03519E"
                     align="center"
-                    font-size="32px"
-                    font-weight="700"
-                    color="#111827"
+                    font-weight="bold"
                     padding-bottom="10px"
                 >
-                    Welcome to {{appName}}{{#if userName}}, {{capitalize
-                    userName}}{{/if}}! 🎉
+                    {{appName}}
                 </mj-text>
 
+                <!-- Divider -->
+                <mj-divider
+                    border-color="#03519E"
+                    border-width="2px"
+                    padding="10px 0"
+                ></mj-divider>
+
+                <!-- Salutation et félicitations -->
                 <mj-text
-                    align="center"
                     font-size="18px"
-                    color="#374151"
-                    padding-bottom="30px"
+                    color="#03519E"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="bold"
+                    align="center"
+                    padding="20px 0 10px 0"
                 >
-                    Your email has been verified successfully and your account
-                    is now active. We're excited to have you on board!
+                    🎉 Bienvenue{{#if userName}} {{userName}}{{/if}} ! 🎉
                 </mj-text>
 
-                <!-- CTA Button -->
-                <mj-button
-                    href="{{loginUrl}}"
-                    css-class="button-success"
-                    padding="30px 0"
-                    inner-padding="16px 32px"
+                <!-- Message principal -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0"
                 >
-                    Start Exploring
+                    Félicitations ! Votre adresse email a été vérifiée avec
+                    succès et votre compte <b>{{appName}}</b> est maintenant
+                    actif. Nous sommes ravis de vous accueillir dans notre
+                    communauté !
+                </mj-text>
+
+                <!-- Bouton CTA -->
+                <mj-button
+                    font-size="16px"
+                    href="{{loginUrl}}"
+                    background-color="#03519E"
+                    color="#ffffff"
+                    font-family="Helvetica, Arial, sans-serif"
+                    padding="15px 30px"
+                    border-radius="5px"
+                    align="center"
+                >
+                    Commencer l'exploration
                 </mj-button>
 
-                <!-- Features Section -->
+                <!-- Section des fonctionnalités -->
                 <mj-text
+                    font-size="18px"
+                    color="#03519E"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="bold"
                     align="center"
-                    font-size="20px"
-                    font-weight="600"
-                    color="#111827"
-                    padding="40px 0 20px"
+                    padding="30px 0 15px 0"
                 >
-                    What you can do now:
+                    Voici ce que vous pouvez faire maintenant :
                 </mj-text>
-            </mj-column>
-        </mj-section>
 
-        <!-- Features Grid -->
-        <mj-section background-color="#ffffff" padding="0 20px 40px">
-            <mj-column width="50%">
-                <mj-text css-class="feature-box" align="center">
-                    <strong style="color: #3b82f6; font-size: 18px"
-                        >🔐 Secure Access</strong
-                    ><br />
-                    <span style="font-size: 14px; color: #6b7280"
-                        >Your data is protected with enterprise-grade
-                        security</span
-                    >
-                </mj-text>
-            </mj-column>
-            <mj-column width="50%">
-                <mj-text css-class="feature-box" align="center">
-                    <strong style="color: #3b82f6; font-size: 18px"
-                        >📊 Dashboard</strong
-                    ><br />
-                    <span style="font-size: 14px; color: #6b7280"
-                        >Access your personalized dashboard and analytics</span
-                    >
-                </mj-text>
-            </mj-column>
-        </mj-section>
-
-        <mj-section background-color="#ffffff" padding="0 20px 60px">
-            <mj-column width="50%">
-                <mj-text css-class="feature-box" align="center">
-                    <strong style="color: #3b82f6; font-size: 18px"
-                        >🛠️ Tools</strong
-                    ><br />
-                    <span style="font-size: 14px; color: #6b7280"
-                        >Explore our suite of powerful tools and features</span
-                    >
-                </mj-text>
-            </mj-column>
-            <mj-column width="50%">
-                <mj-text css-class="feature-box" align="center">
-                    <strong style="color: #3b82f6; font-size: 18px"
-                        >💬 Support</strong
-                    ><br />
-                    <span style="font-size: 14px; color: #6b7280"
-                        >24/7 support team ready to help you succeed</span
-                    >
-                </mj-text>
-            </mj-column>
-        </mj-section>
-
-        <!-- Footer -->
-        <mj-section background-color="#F3F4F6" padding="30px 20px">
-            <mj-column>
-                <mj-text align="center" css-class="footer-text">
-                    © {{currentYear}} {{appName}}. All rights reserved.
-                </mj-text>
+                <!-- Liste des fonctionnalités -->
                 <mj-text
-                    align="center"
-                    css-class="footer-text"
-                    padding-top="15px"
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="10px 0"
                 >
-                    Need help getting started? Contact us at
-                    <a href="mailto:{{supportEmail}}" style="color: #3b82f6"
+                    🔐 <b>Accès sécurisé :</b> Vos données sont protégées par un
+                    chiffrement de niveau entreprise<br /><br />
+                    📊 <b>Tableau de bord :</b> Accédez à votre tableau de bord
+                    personnalisé et vos analyses<br /><br />
+                    🛠️ <b>Outils puissants :</b> Explorez notre suite d'outils
+                    et fonctionnalités avancées<br /><br />
+                    💬 <b>Support 24/7 :</b> Notre équipe de support est prête à
+                    vous aider à réussir
+                </mj-text>
+
+                <!-- Conseils pour commencer -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="20px 0 10px 0"
+                >
+                    Pour optimiser votre sécurité, nous vous recommandons
+                    d'activer l'authentification à deux facteurs dans les
+                    paramètres de votre compte.
+                </mj-text>
+
+                <!-- Signature -->
+                <mj-text
+                    font-size="16px"
+                    color="#555"
+                    font-family="Helvetica, Arial, sans-serif"
+                    font-weight="500"
+                    line-height="26px"
+                    padding="20px 0"
+                >
+                    Nous vous souhaitons une excellente expérience sur la
+                    plateforme {{appName}} !<br /><br />
+                    Cordialement,<br />
+                    L'équipe <b>{{appName}}</b>
+                </mj-text>
+
+                <!-- Footer -->
+                <mj-divider
+                    border-color="#E5E7EB"
+                    border-width="1px"
+                    padding="20px 0 10px 0"
+                ></mj-divider>
+
+                <mj-text
+                    font-size="12px"
+                    color="#9CA3AF"
+                    font-family="Helvetica, Arial, sans-serif"
+                    align="center"
+                    padding="10px 0"
+                >
+                    Besoin d'aide pour commencer ? Contactez-nous à
+                    <a href="mailto:{{supportEmail}}" style="color: #03519e"
                         >{{supportEmail}}</a
                     >
+                </mj-text>
+
+                <mj-text
+                    font-size="12px"
+                    color="#9CA3AF"
+                    font-family="Helvetica, Arial, sans-serif"
+                    align="center"
+                    padding="5px 0"
+                >
+                    © {{currentYear}} {{appName}}. Tous droits réservés.
                 </mj-text>
             </mj-column>
         </mj-section>
